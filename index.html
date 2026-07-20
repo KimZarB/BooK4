@@ -655,7 +655,60 @@ function connectSing(pair){
   else if(curEx==='bybit') connectBybitSing(pair,key);
   else if(curEx==='okx') connectOkxSing(pair,key);
   else if(curEx==='kraken') connectKrakenSing(pair,key);
+  else if(curEx==='coinbase') connectCoinbaseSing(pair,key);
   else {setLive(false,'Simulat: '+curEx);initSimVols();renderSing();}
+}
+
+/* ── Coinbase — doar Spot (Coinbase Advanced Trade nu oferă Futures public) ── */
+function connectCoinbaseSing(pair,key){
+  if(curMkt==='futures'){setLive(false,'Coinbase nu are Futures public — afișăm Spot');}
+  var sym=SYM.coinbase(pair).replace('-USDT','-USD'); /* Coinbase cotează majoritatea perechilor în USD */
+  try{
+    singWsBook=new WebSocket('wss://advanced-trade-ws.coinbase.com');
+    singWsBook.onopen=function(){
+      singWsBook.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'level2'}));
+      setLive(true,'LIVE Coinbase — '+pair.replace('USDT','/USDT'));
+    };
+    singWsBook.onmessage=function(e){
+      if(singKey!==key)return;
+      var d=JSON.parse(e.data);
+      if(d.channel!=='l2_data'||!d.events)return;
+      d.events.forEach(function(ev){
+        if(ev.type==='snapshot'){liveBids={};liveAsks={};}
+        (ev.updates||[]).forEach(function(u){
+          var side=(u.side==='bid')?'bid':'ask';
+          var v=+u.new_quantity;
+          if(side==='bid'){if(v===0)delete liveBids[u.price_level];else liveBids[u.price_level]=v;}
+          else{if(v===0)delete liveAsks[u.price_level];else liveAsks[u.price_level]=v;}
+        });
+      });
+      calcMid();if(curPage==='sing')renderSing();
+    };
+    singWsBook.onerror=function(){setLive(false,'Coinbase eroare conexiune');};
+    singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectCoinbaseSing(pair,key);},3000);}};
+    connectCoinbaseTrade();
+    function connectCoinbaseTrade(){
+      if(singKey!==key)return;
+      singWsTrade=new WebSocket('wss://advanced-trade-ws.coinbase.com');
+      singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'market_trades'}));};
+      singWsTrade.onmessage=function(e){
+        if(singKey!==key)return;
+        var d=JSON.parse(e.data);
+        if(d.channel!=='market_trades'||!d.events)return;
+        d.events.forEach(function(ev){
+          (ev.trades||[]).forEach(function(t){
+            var qty=+t.size,prc=+t.price,sell=(t.side==='SELL'||t.side==='sell');
+            if(!isFinite(qty)||qty<=0)return;
+            liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+            if(liveTape.length>400)liveTape.pop();
+            checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
+          });
+        });
+        if(curPage==='sing')renderSing();
+      };
+      singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectCoinbaseTrade();},2500);};
+    }
+  }catch(ex){setLive(false,'Coinbase indisponibil');connectBinanceSing(pair,key);}
 }
 
 /* ── Binance — cu buffer + sincronizare lastUpdateId (fix desync BID/ASK) ── */
@@ -702,27 +755,37 @@ function connectBinanceSing(pair,key){
       setLive(false,'Reconectare…');
       setTimeout(function(){if(singKey===key)connectBinanceSing(pair,key);},3000);
     };
-    singWsTrade=new WebSocket(wsBase+sym+(curMkt==='futures'?'@aggTrade':'@trade'));
-    singWsTrade.onmessage=function(e){
+    connectBinanceTrade();
+    function connectBinanceTrade(){
       if(singKey!==key)return;
-      var d=JSON.parse(e.data);
-      var prc=+(d.p||0),qty=+(d.q||0),sell=d.m===true;
-      if(!isFinite(qty)||qty<=0)return;
-      liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
-      if(liveTape.length>400)liveTape.pop();
-      checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
-      if(curPage==='sing')renderSing();
-    };
-    singWsTrade.onerror=function(){};
+      singWsTrade=new WebSocket(wsBase+sym+(curMkt==='futures'?'@aggTrade':'@trade'));
+      singWsTrade.onmessage=function(e){
+        if(singKey!==key)return;
+        var d=JSON.parse(e.data);
+        var prc=+(d.p||0),qty=+(d.q||0),sell=d.m===true;
+        if(!isFinite(qty)||qty<=0)return;
+        liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(liveTape.length>400)liveTape.pop();
+        checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
+        if(curPage==='sing')renderSing();
+      };
+      singWsTrade.onerror=function(){};
+      singWsTrade.onclose=function(){
+        if(singKey!==key)return; /* reconectăm doar dacă suntem tot pe aceeași monedă/piață */
+        setTimeout(function(){if(singKey===key)connectBinanceTrade();},2500);
+      };
+    }
   }catch(ex){setLive(false,'WS indisponibil');}
 }
 
-/* ── Bybit ── */
+/* ── Bybit — Spot sau Linear (USDT Perpetual Futures), în funcție de comutator ── */
 function connectBybitSing(pair,key){
   var sym=SYM.bybit(pair);
+  var cat=curMkt==='futures'?'linear':'spot';
+  var wsUrl='wss://stream.bybit.com/v5/public/'+cat;
   try{
-    singWsBook=new WebSocket('wss://stream.bybit.com/v5/public/spot');
-    singWsBook.onopen=function(){singWsBook.send(JSON.stringify({op:'subscribe',args:['orderbook.200.'+sym]}));setLive(true,'LIVE Bybit — '+pair.replace('USDT','/USDT'));};
+    singWsBook=new WebSocket(wsUrl);
+    singWsBook.onopen=function(){singWsBook.send(JSON.stringify({op:'subscribe',args:['orderbook.200.'+sym]}));setLive(true,'LIVE Bybit '+(curMkt==='futures'?'Futures':'')+' — '+pair.replace('USDT','/USDT'));};
     singWsBook.onmessage=function(e){
       if(singKey!==key)return;
       var d=JSON.parse(e.data);if(!d.data)return;var dd=d.data;
@@ -732,31 +795,38 @@ function connectBybitSing(pair,key){
       calcMid();if(curPage==='sing')renderSing();
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectBybitSing(pair,key);},3000);}};
-    singWsTrade=new WebSocket('wss://stream.bybit.com/v5/public/spot');
-    singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({op:'subscribe',args:['publicTrade.'+sym]}));};
-    singWsTrade.onmessage=function(e){
+    connectBybitTrade();
+    function connectBybitTrade(){
       if(singKey!==key)return;
-      var d=JSON.parse(e.data);if(!d.data)return;
-      d.data.forEach(function(t){
-        var qty=+(t.v||t.size||0),prc=+(t.p||0),sell=(t.S==='Sell');
-        if(qty<=0)return;
-        liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
-        checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
-      });
-      if(curPage==='sing')renderSing();
-    };
+      singWsTrade=new WebSocket(wsUrl);
+      singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({op:'subscribe',args:['publicTrade.'+sym]}));};
+      singWsTrade.onmessage=function(e){
+        if(singKey!==key)return;
+        var d=JSON.parse(e.data);if(!d.data)return;
+        d.data.forEach(function(t){
+          var qty=+(t.v||t.size||0),prc=+(t.p||0),sell=(t.S==='Sell');
+          if(qty<=0)return;
+          liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
+          checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
+        });
+        if(curPage==='sing')renderSing();
+      };
+      singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectBybitTrade();},2500);};
+    }
   }catch(ex){setLive(false,'Bybit indisponibil');connectBinanceSing(pair,key);}
 }
 
-/* ── OKX ── */
+/* ── OKX — Spot sau Swap (Perpetual Futures), în funcție de comutator ── */
 function connectOkxSing(pair,key){
-  var sym=SYM.okx(pair);
+  var sym=curMkt==='futures'?SYM.okx(pair)+'-SWAP':SYM.okx(pair);
   try{
     singWsBook=new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-    singWsBook.onopen=function(){singWsBook.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:sym}]}));setLive(true,'LIVE OKX — '+pair.replace('USDT','/USDT'));};
+    singWsBook.onopen=function(){singWsBook.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:sym}]}));setLive(true,'LIVE OKX '+(curMkt==='futures'?'Swap':'')+' — '+pair.replace('USDT','/USDT'));};
     singWsBook.onmessage=function(e){
       if(singKey!==key||e.data==='pong')return;
-      var d=JSON.parse(e.data);if(!d.data||!d.data[0])return;var dd=d.data[0];
+      var d=JSON.parse(e.data);
+      if(d.event==='error'){setLive(false,'OKX: instrument indisponibil');return;}
+      if(!d.data||!d.data[0])return;var dd=d.data[0];
       if(d.action==='snapshot'){liveBids={};liveAsks={};}
       (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveBids[r[0]];else liveBids[r[0]]=v;});
       (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveAsks[r[0]];else liveAsks[r[0]]=v;});
@@ -764,19 +834,24 @@ function connectOkxSing(pair,key){
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectOkxSing(pair,key);},3000);}};
     setInterval(function(){if(singWsBook&&singWsBook.readyState===1&&singKey===key)singWsBook.send('ping');},25000);
-    singWsTrade=new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-    singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({op:'subscribe',args:[{channel:'trades',instId:sym}]}));};
-    singWsTrade.onmessage=function(e){
-      if(singKey!==key||e.data==='pong')return;
-      var d=JSON.parse(e.data);if(!d.data)return;
-      d.data.forEach(function(t){
-        var qty=+(t.sz||0),prc=+(t.px||0),sell=(t.side==='sell');
-        if(qty<=0)return;
-        liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
-        checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
-      });
-      if(curPage==='sing')renderSing();
-    };
+    connectOkxTrade();
+    function connectOkxTrade(){
+      if(singKey!==key)return;
+      singWsTrade=new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+      singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({op:'subscribe',args:[{channel:'trades',instId:sym}]}));};
+      singWsTrade.onmessage=function(e){
+        if(singKey!==key||e.data==='pong')return;
+        var d=JSON.parse(e.data);if(!d.data)return;
+        d.data.forEach(function(t){
+          var qty=+(t.sz||0),prc=+(t.px||0),sell=(t.side==='sell');
+          if(qty<=0)return;
+          liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
+          checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
+        });
+        if(curPage==='sing')renderSing();
+      };
+      singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectOkxTrade();},2500);};
+    }
   }catch(ex){setLive(false,'OKX indisponibil');connectBinanceSing(pair,key);}
 }
 
