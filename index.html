@@ -1025,7 +1025,7 @@ function buildChips(){
   ALL_EX.forEach(function(ex){
     var sel=consSel.indexOf(ex.id)>=0,dis=!sel&&consSel.length>=4;
     var live=exBooks[ex.id]&&exBooks[ex.id].connected;
-    h+='<div class="chip'+(sel?' sel':'')+(dis?' dis':'')+'" id="chip-'+ex.id+'" style="'+(sel?'background:'+ex.c+';color:#000':'')+'" onclick="toggleEx(\\''+ex.id+'\\')"><span class="chip-dot'+(live?' live':'')+'"></span>'+ex.n+'</div>';
+    h+='<div class="chip'+(sel?' sel':'')+(dis?' dis':'')+'" id="chip-'+ex.id+'" style="'+(sel?'background:'+ex.c+';color:#000':'')+'" onclick="toggleEx(&quot;'+ex.id+'&quot;)"><span class="chip-dot'+(live?' live':'')+'"></span>'+ex.n+'</div>';
   });
   document.getElementById('chips').innerHTML=h;
   document.getElementById('csi').textContent=consSel.length+' / 4 selectate | ● verde = date live | ● gri = preț Binance + spread estimat';
