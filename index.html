@@ -718,7 +718,12 @@ function connectCoinbaseSing(pair,key){
 /* ── Binance — cu buffer + sincronizare lastUpdateId (fix desync BID/ASK) ── */
 function connectBinanceSing(pair,key){
   var sym=pair.toLowerCase();
-  var wsBase=curMkt==='futures'?'wss://fstream.binance.com/ws/':'wss://stream.binance.com:9443/ws/';
+  /* IMPORTANT: Binance Futures a migrat WebSocket-urile pe adrese separate
+     pe categorii (Public / Market / Private) în 2026. Depth (@depth) e
+     categoria Public, iar tranzacțiile (@aggTrade) sunt categoria Market —
+     adrese diferite, altfel Market nu mai trimite date pe conexiunea veche. */
+  var wsDepthBase=curMkt==='futures'?'wss://fstream.binance.com/public/ws/':'wss://stream.binance.com:9443/ws/';
+  var wsTradeBase=curMkt==='futures'?'wss://fstream.binance.com/market/ws/':'wss://stream.binance.com:9443/ws/';
   var apiBase=curMkt==='futures'?'https://fapi.binance.com/fapi/v1/':'https://api.binance.com/api/v3/';
   var buf=[],snapReady=false,lastId=0;
   var lastTradeTs=Date.now(),tradeConnStartTs=Date.now();
@@ -741,9 +746,9 @@ function connectBinanceSing(pair,key){
     }).catch(function(){setLive(false,'API indisponibil, reîncercăm…');setTimeout(function(){if(singKey===key)loadSnapshot();},4000);});
   }
 
-  /* ── Conexiune 1: Orderbook (BID/ASK) ── */
+  /* ── Conexiune 1: Orderbook (BID/ASK) — categoria Public ── */
   try{
-    singWsBook=new WebSocket(wsBase+sym+'@depth@100ms');
+    singWsBook=new WebSocket(wsDepthBase+sym+'@depth@100ms');
     singWsBook.onopen=function(){setLive(true,'Sincronizare Binance '+(curMkt==='futures'?'Futures':'')+' — '+pair.replace('USDT','/USDT')+'…');loadSnapshot();};
     singWsBook.onmessage=function(e){
       if(singKey!==key)return;
@@ -762,12 +767,12 @@ function connectBinanceSing(pair,key){
     };
   }catch(ex){setLive(false,'WS indisponibil');}
 
-  /* ── Conexiune 2: Tranzacții (Tape) — cu auto-reparare ── */
+  /* ── Conexiune 2: Tranzacții (Tape) — categoria Market — cu auto-reparare ── */
   function openTradeSocket(){
     if(singKey!==key)return;
     tradeConnStartTs=Date.now();
     try{
-      var wsT=new WebSocket(wsBase+sym+(curMkt==='futures'?'@aggTrade':'@trade'));
+      var wsT=new WebSocket(wsTradeBase+sym+(curMkt==='futures'?'@aggTrade':'@trade'));
       singWsTrade=wsT;
       wsT.onmessage=function(e){
         if(singKey!==key||singWsTrade!==wsT)return;
