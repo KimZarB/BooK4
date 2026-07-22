@@ -809,6 +809,18 @@ function connectBinanceSing(pair,key){
   }
   openDepthSocket(0);
 
+  /* Plasă de siguranță: indiferent dacă am detectat sau nu vreo eroare de
+     sincronizare, reîmprospătăm COMPLET orderbook-ul de la zero (fresh
+     snapshot) la fiecare 12 secunde pe Futures. Așa, orice nivel „fantomă"
+     rămas din greșeală dispare garantat în maximum 12 secunde, nu rămâne
+     blocat pentru totdeauna. */
+  if(isFut){
+    var safetyResync=setInterval(function(){
+      if(singKey!==key){clearInterval(safetyResync);return;}
+      resyncBook('actualizare periodică');
+    },12000);
+  }
+
   /* ── Tranzacții (Tape) — încearcă automat mai multe adrese până găsește una funcțională ── */
   var tradeUrlIdx=0,tradeWorking=false;
   function openTradeSocket(urlIdx){
