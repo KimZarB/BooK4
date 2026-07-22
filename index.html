@@ -718,15 +718,23 @@ function connectCoinbaseSing(pair,key){
 /* ── Binance — cu buffer + sincronizare lastUpdateId (fix desync BID/ASK) ── */
 function connectBinanceSing(pair,key){
   var sym=pair.toLowerCase();
-  /* IMPORTANT: Binance Futures a migrat WebSocket-urile pe adrese separate
-     pe categorii (Public / Market / Private) în 2026. Depth (@depth) e
-     categoria Public, iar tranzacțiile (@aggTrade) sunt categoria Market —
-     adrese diferite, altfel Market nu mai trimite date pe conexiunea veche. */
-  var wsDepthBase=curMkt==='futures'?'wss://fstream.binance.com/public/ws/':'wss://stream.binance.com:9443/ws/';
-  var wsTradeBase=curMkt==='futures'?'wss://fstream.binance.com/market/ws/':'wss://stream.binance.com:9443/ws/';
-  var apiBase=curMkt==='futures'?'https://fapi.binance.com/fapi/v1/':'https://api.binance.com/api/v3/';
-  var buf=[],snapReady=false,lastId=0;
+  var isFut=curMkt==='futures';
+  var apiBase=isFut?'https://fapi.binance.com/fapi/v1/':'https://api.binance.com/api/v3/';
+  var buf=[],snapReady=false,lastId=0,lastFinalId=null,resyncing=false;
   var lastTradeTs=Date.now(),tradeConnStartTs=Date.now();
+
+  /* Adrese posibile pentru depth (orderbook), încercate în ordine dacă una nu răspunde */
+  var depthUrls=isFut?[
+    'wss://fstream.binance.com/public/ws/'+sym+'@depth@100ms',
+    'wss://fstream.binance.com/ws/'+sym+'@depth@100ms'
+  ]:[ 'wss://stream.binance.com:9443/ws/'+sym+'@depth@100ms' ];
+
+  /* Adrese posibile pentru tranzacții (Tape), încercate automat pe rând */
+  var tradeUrls=isFut?[
+    'wss://fstream.binance.com/market/ws/'+sym+'@aggTrade',
+    'wss://fstream.binance.com/ws/'+sym+'@aggTrade',
+    'wss://fstream.binance.com/public/ws/'+sym+'@aggTrade'
+  ]:[ 'wss://stream.binance.com:9443/ws/'+sym+'@trade' ];
 
   function applyDiff(d){
     (d.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveBids[r[0]];else liveBids[r[0]]=v;});
@@ -738,48 +746,84 @@ function connectBinanceSing(pair,key){
       liveBids={};liveAsks={};
       (d.bids||[]).forEach(function(r){liveBids[r[0]]=+r[1];});
       (d.asks||[]).forEach(function(r){liveAsks[r[0]]=+r[1];});
-      lastId=d.lastUpdateId||0;
-      buf.filter(function(ev){return (ev.u||0)>lastId;}).forEach(function(ev){applyDiff(ev);lastId=ev.u||lastId;});
-      buf=[];snapReady=true;
+      lastId=d.lastUpdateId||0; lastFinalId=null;
+      /* aplicăm din buffer doar evenimentele mai noi decât snapshot-ul */
+      var toApply=buf.filter(function(ev){return (ev.u||0)>lastId;});
+      toApply.forEach(function(ev){applyDiff(ev);lastId=ev.u;lastFinalId=ev.u;});
+      buf=[];snapReady=true;resyncing=false;
       calcMid();initSimVols();
       if(curPage==='sing')renderSing();
-    }).catch(function(){setLive(false,'API indisponibil, reîncercăm…');setTimeout(function(){if(singKey===key)loadSnapshot();},4000);});
+    }).catch(function(){setLive(false,'API indisponibil, reîncercăm…');setTimeout(function(){if(singKey===key){resyncing=false;loadSnapshot();}},4000);});
+  }
+  /* Re-sincronizare completă — apelată automat când se detectează o gaură
+     în fluxul de date (un mesaj lipsă), ca să nu rămână niveluri „fantomă". */
+  function resyncBook(reason){
+    if(resyncing)return;
+    resyncing=true;snapReady=false;buf=[];lastFinalId=null;
+    setLive(true,'Resincronizare orderbook ('+reason+')…');
+    loadSnapshot();
   }
 
-  /* ── Conexiune 1: Orderbook (BID/ASK) — categoria Public ── */
-  try{
-    singWsBook=new WebSocket(wsDepthBase+sym+'@depth@100ms');
-    singWsBook.onopen=function(){setLive(true,'Sincronizare Binance '+(curMkt==='futures'?'Futures':'')+' — '+pair.replace('USDT','/USDT')+'…');loadSnapshot();};
-    singWsBook.onmessage=function(e){
-      if(singKey!==key)return;
-      var d;try{d=JSON.parse(e.data);}catch(ex){return;}
-      if(!snapReady){buf.push(d);return;}
-      if((d.u||0)<=lastId)return;
-      applyDiff(d);lastId=d.u;
-      calcMid();
-      if(curPage==='sing')renderSing();
-    };
-    singWsBook.onerror=function(){};
-    singWsBook.onclose=function(){
-      if(singKey!==key)return;
-      setLive(false,'Reconectare…');
-      setTimeout(function(){if(singKey===key)connectBinanceSing(pair,key);},3000);
-    };
-  }catch(ex){setLive(false,'WS indisponibil');}
-
-  /* ── Conexiune 2: Tranzacții (Tape) — categoria Market — cu auto-reparare ── */
-  function openTradeSocket(){
+  /* ── Orderbook (BID/ASK), cu rotație automată de adrese ── */
+  function openDepthSocket(urlIdx){
     if(singKey!==key)return;
+    urlIdx=urlIdx||0;
+    if(urlIdx>=depthUrls.length)urlIdx=0;
+    try{
+      var wsB=new WebSocket(depthUrls[urlIdx]);
+      singWsBook=wsB;
+      var openedOk=false;
+      wsB.onopen=function(){
+        openedOk=true;
+        setLive(true,'Sincronizare Binance '+(isFut?'Futures':'')+' — '+pair.replace('USDT','/USDT')+'…');
+        loadSnapshot();
+      };
+      wsB.onmessage=function(e){
+        if(singKey!==key||singWsBook!==wsB)return;
+        var d;try{d=JSON.parse(e.data);}catch(ex){return;}
+        if(!snapReady){buf.push(d);return;}
+        if(isFut){
+          /* Futures: verificăm lanțul pu -> u. Dacă e ruptă continuitatea,
+             resincronizăm imediat (previne blocurile "fantomă" care nu dispar) */
+          if(lastFinalId!==null && d.pu!==lastFinalId){resyncBook('secvență întreruptă');return;}
+          if((d.u||0)<=lastId)return;
+          applyDiff(d);lastId=d.u;lastFinalId=d.u;
+        } else {
+          if((d.u||0)<=lastId)return;
+          applyDiff(d);lastId=d.u;
+        }
+        calcMid();
+        if(curPage==='sing')renderSing();
+      };
+      wsB.onerror=function(){};
+      wsB.onclose=function(){
+        if(singKey!==key||singWsBook!==wsB)return;
+        if(!openedOk&&urlIdx+1<depthUrls.length){openDepthSocket(urlIdx+1);return;}
+        setLive(false,'Reconectare…');
+        setTimeout(function(){if(singKey===key)openDepthSocket(0);},3000);
+      };
+    }catch(ex){
+      if(urlIdx+1<depthUrls.length)openDepthSocket(urlIdx+1);
+      else setTimeout(function(){if(singKey===key)openDepthSocket(0);},3000);
+    }
+  }
+  openDepthSocket(0);
+
+  /* ── Tranzacții (Tape) — încearcă automat mai multe adrese până găsește una funcțională ── */
+  var tradeUrlIdx=0,tradeWorking=false;
+  function openTradeSocket(urlIdx){
+    if(singKey!==key)return;
+    urlIdx=(urlIdx===undefined)?tradeUrlIdx:urlIdx;
     tradeConnStartTs=Date.now();
     try{
-      var wsT=new WebSocket(wsTradeBase+sym+(curMkt==='futures'?'@aggTrade':'@trade'));
+      var wsT=new WebSocket(tradeUrls[urlIdx]);
       singWsTrade=wsT;
       wsT.onmessage=function(e){
         if(singKey!==key||singWsTrade!==wsT)return;
         var d;try{d=JSON.parse(e.data);}catch(ex){return;}
         var prc=+(d.p||0),qty=+(d.q||0),sell=d.m===true;
         if(!isFinite(qty)||qty<=0||!isFinite(prc)||prc<=0)return;
-        lastTradeTs=Date.now();
+        tradeWorking=true;tradeUrlIdx=urlIdx;lastTradeTs=Date.now();
         liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
         if(liveTape.length>400)liveTape.pop();
         checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
@@ -788,24 +832,26 @@ function connectBinanceSing(pair,key){
       wsT.onerror=function(){};
       wsT.onclose=function(){
         if(singKey!==key||singWsTrade!==wsT)return;
-        setTimeout(function(){if(singKey===key)openTradeSocket();},2500);
+        setTimeout(function(){if(singKey===key)openTradeSocket(tradeWorking?urlIdx:undefined);},2500);
       };
-    }catch(ex){setTimeout(function(){if(singKey===key)openTradeSocket();},3000);}
+    }catch(ex){setTimeout(function(){if(singKey===key)openTradeSocket(urlIdx);},3000);}
   }
-  openTradeSocket();
+  openTradeSocket(0);
 
-  /* Paznic: dacă în 8 secunde de la deschiderea conexiunii de tranzacții
-     nu a sosit NICIUN mesaj, presupunem că e „blocată" în tăcere și o
-     reconstruim automat, la nesfârșit, fără nicio acțiune din partea ta. */
+  /* Paznic: dacă adresa curentă de tranzacții nu a livrat NIMIC în 7 secunde,
+     trecem automat la următoarea adresă din listă. Se repetă în buclă prin
+     toate variantele până găsește una care chiar livrează date — fără să
+     faci tu nimic. */
   var watchdog=setInterval(function(){
     if(singKey!==key){clearInterval(watchdog);return;}
+    if(tradeWorking)return; /* deja am găsit o adresă bună, nu mai schimbăm */
     var sinceOpen=Date.now()-tradeConnStartTs;
-    var sinceTrade=Date.now()-lastTradeTs;
-    if(sinceOpen>8000&&sinceTrade>8000){
+    if(sinceOpen>7000){
+      tradeUrlIdx=(tradeUrlIdx+1)%tradeUrls.length;
       if(singWsTrade){try{singWsTrade.close();}catch(e){}}
-      openTradeSocket();
+      openTradeSocket(tradeUrlIdx);
     }
-  },4000);
+  },3000);
 }
 
 /* ── Bybit — Spot sau Linear (USDT Perpetual Futures), în funcție de comutator ── */
