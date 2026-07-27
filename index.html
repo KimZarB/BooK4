@@ -17,12 +17,20 @@
   --ui:'Syne',sans-serif;
   --mono:'Courier New',Courier,monospace;
   --fs:12px;
+  --fs-wh:13px;
   --col-bid:#00b87c;--col-ask:#c4002a;--col-wh:#ffc340;
+  --col-vol:#7a85a8;
+  --col-wh-bg:#2a2510;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{font-family:'Courier New',Courier,monospace;font-size:var(--fs);background:var(--bg0);color:var(--tx)}
-.app{display:flex;flex-direction:column;height:100vh}
+.app{display:flex;flex-direction:column;height:100vh;position:relative}
+
+/* FLOATING TOGGLE */
+#float-toggle{position:fixed;top:5px;left:5px;z-index:200;background:var(--bg3);border:1px solid var(--brd);color:var(--tx2);padding:3px 6px;cursor:pointer;border-radius:4px;font-size:12px;font-family:var(--mono);line-height:1;opacity:0.6;transition:opacity 0.2s}
+#float-toggle:hover{opacity:1}
+.hide-top .topbar, .hide-top .cbar{display:none !important}
 
 /* TOPBAR */
 .topbar{background:var(--bg1);border-bottom:1px solid var(--brd);padding:0 14px;display:flex;align-items:center;gap:3px;height:42px;flex-shrink:0}
@@ -66,6 +74,10 @@ input.ni{cursor:text;width:76px}
 .tvw iframe{width:100%;height:100%;border:none;display:block}
 .brow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--brd2);flex:1;overflow:hidden;min-height:0}
 
+/* DUAL PANEL (SINGULAR) */
+#dual-panel{height:270px;background:var(--bg1);border-bottom:1px solid var(--brd);flex-shrink:0;display:none;flex-direction:column}
+#dual-panel .brow{height:100%}
+
 /* PANELS */
 .panel{background:var(--bg1);display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .phdr{background:var(--bg2);padding:5px 10px;border-bottom:1px solid var(--brd2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
@@ -83,19 +95,30 @@ input.ni{cursor:text;width:76px}
 .sa::-webkit-scrollbar{width:3px}
 .sa::-webkit-scrollbar-thumb{background:var(--brd);border-radius:2px}
 
-/* ORDER ROWS */
-.or{display:grid;padding:3px 10px;position:relative;border-bottom:1px solid #0d0f16;cursor:default}
+/* TAPE STATS & FILTERS */
+.tape-stats{display:flex;justify-content:space-between;padding:5px 10px;background:var(--bg0);border-bottom:1px solid var(--brd2);font-size:10px;font-family:var(--ui);font-weight:700;flex-shrink:0}
+.ts-buy{color:var(--col-bid)}
+.ts-sell{color:var(--col-ask)}
+.ts-net{color:var(--yl)}
+.tape-filter-bar{display:flex;gap:4px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--brd2);flex-shrink:0;flex-wrap:wrap;align-items:center}
+.tape-filter-bar select, .tape-filter-bar input{height:24px;font-size:10px;padding:2px 5px}
+.tape-filter-bar input[type="date"]{width:130px}
+
+/* ORDER ROWS (SINGULAR & ISTORII) */
+.or{display:grid;padding:3px 10px;position:relative;border-bottom:1px solid #0d0f16;cursor:default;align-items:center}
 .or:hover{background:rgba(255,255,255,.02)}
 .vb{position:absolute;top:0;bottom:0;pointer-events:none}
 .vb-b{left:0;background:var(--gr3)}
 .vb-a{right:0;background:var(--rd3)}
-.bp,.apc{font-size:var(--fs);color:var(--col-bid);position:relative;z-index:1}
+.or-side{display:flex;justify-content:space-between;align-items:center;padding:1px 2px;border-radius:3px;position:relative;z-index:1;width:100%}
+.bp,.apc{font-size:var(--fs);color:var(--col-bid)}
 .apc{color:var(--col-ask)}
-.bv,.av{font-size:var(--fs);color:var(--tx2);text-align:right;position:relative;z-index:1}
-.wh .bp{color:var(--col-wh);font-weight:700}
-.wh .bv{font-weight:600}
-.wh .av{font-weight:600}
-.wh .apc{color:var(--col-wh);font-weight:700}
+.bv,.av{font-size:var(--fs);color:var(--col-vol)}
+.wh .or-side{background:var(--col-wh-bg)}
+.wh .bp{color:var(--col-wh);font-weight:700;font-size:var(--fs-wh)}
+.wh .bv{color:var(--col-wh);font-weight:600;font-size:var(--fs-wh)}
+.wh .apc{color:var(--col-wh);font-weight:700;font-size:var(--fs-wh)}
+.wh .av{color:var(--col-wh);font-weight:600;font-size:var(--fs-wh)}
 .spr-row{background:var(--bg3);padding:3px 10px;border-bottom:1px solid var(--brd2);text-align:center;font-size:10px;color:var(--yl);font-weight:600}
 .tt{font-size:10px;color:var(--tx3)}
 .tp{text-align:right;font-size:var(--fs)}
@@ -106,7 +129,7 @@ input.ni{cursor:text;width:76px}
 .tb-buy{border-left:2px solid var(--gr2)}
 .tb-sell{border-left:2px solid var(--rd2)}
 
-/* CONSTRUCTOR — layout simplu, un rand pe bursa: BID pret | Qty | Qty | ASK pret */
+/* CONSTRUCTOR */
 .chips-bar{background:var(--bg2);border-bottom:1px solid var(--brd2);padding:6px 14px;flex-shrink:0}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
 .chip{padding:3px 11px;border-radius:20px;border:1px solid var(--brd);background:var(--bg3);color:var(--tx3);cursor:pointer;font-size:10px;font-family:var(--mono);transition:all .12s;user-select:none}
@@ -124,24 +147,46 @@ input.ni{cursor:text;width:76px}
 .badge{font-size:8px;padding:1px 5px;border-radius:3px;font-family:var(--ui);font-weight:700;margin-left:4px}
 .b-live{background:rgba(0,229,160,.15);color:var(--gr)}
 .b-sim{background:rgba(255,195,64,.1);color:var(--yl)}
-.ex-col{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:3px 8px;border-bottom:1px solid var(--brd2);background:var(--bg2);flex-shrink:0}
-.ech{font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700}
-.ech:not(:first-child){text-align:right}
-.ex-tot{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:2px 8px;border-bottom:1px solid var(--brd2);background:var(--bg0);flex-shrink:0}
-.etv{font-size:8px;color:var(--tx3)}
-.etv:not(:first-child){text-align:right}
-.ex-rows{flex:1;overflow-y:auto;min-height:0}
+
+.ex-filters{display:flex;gap:4px;padding:4px 8px;background:var(--bg0);border-bottom:1px solid var(--brd2);align-items:center;flex-wrap:wrap;flex-shrink:0}
+.ex-filters span{font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700;text-transform:uppercase}
+.ex-inp{width:42px;background:var(--bg3);border:1px solid var(--brd);color:var(--tx);border-radius:3px;padding:2px 4px;font-size:9px;font-family:var(--mono);outline:none;height:18px}
+.ex-inp:focus{border-color:var(--ac)}
+
+.ex-col{display:grid;grid-template-columns:1fr 1fr;padding:3px 8px;border-bottom:1px solid var(--brd2);background:var(--bg2);flex-shrink:0;gap:4px}
+.ech-l{font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700;text-align:left}
+.ech-r{font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700;text-align:right}
+.ex-tot{display:grid;grid-template-columns:1fr 1fr;padding:2px 8px;border-bottom:1px solid var(--brd2);background:var(--bg0);flex-shrink:0;gap:4px}
+.etv-l{font-size:8px;color:var(--tx3);text-align:left}
+.etv-r{font-size:8px;color:var(--tx3);text-align:right}
+.ex-rows{flex:1;overflow-y:auto;min-height:30px}
 .ex-rows::-webkit-scrollbar{width:2px}
-.er{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:2px 8px;position:relative;border-bottom:1px solid #0d0f16}
+
+.er{display:grid;grid-template-columns:1fr 1fr;padding:2px 8px;position:relative;border-bottom:1px solid #0d0f16;align-items:center;gap:4px}
 .er:hover{background:rgba(255,255,255,.02)}
-.er-bp,.er-bv,.er-av,.er-ap{font-size:10px;color:var(--tx2);position:relative;z-index:1}
-.er-bp{color:var(--col-bid)}
-.er-ap{color:var(--col-ask)}
-.er-bv,.er-av,.er-ap{text-align:right}
-.er-wh .er-bp{color:var(--col-wh);font-weight:700}
-.er-wh .er-bv{font-weight:600}
-.er-wh .er-av{font-weight:600}
-.er-wh .er-ap{color:var(--col-wh);font-weight:700}
+.er-bid-side,.er-ask-side{display:flex;justify-content:space-between;align-items:center;padding:1px 3px;border-radius:3px;position:relative;z-index:1}
+.er-ask-side{flex-direction:row-reverse}
+.er-bp{color:var(--col-bid);font-size:var(--fs)}
+.er-ap{color:var(--col-ask);font-size:var(--fs)}
+.er-bv,.er-av{color:var(--col-vol);font-size:var(--fs)}
+
+.er-bid-side.wh-c, .er-ask-side.wh-c{background:var(--col-wh-bg)}
+.wh-c .er-bp{color:var(--col-wh);font-weight:700;font-size:var(--fs-wh)}
+.wh-c .er-bv{color:var(--col-wh);font-weight:600;font-size:var(--fs-wh)}
+.wh-c .er-av{color:var(--col-wh);font-weight:600;font-size:var(--fs-wh)}
+.wh-c .er-ap{color:var(--col-wh);font-weight:700;font-size:var(--fs-wh)}
+
+/* CONSTRUCTOR TAPE */
+.ex-tape-box{height:140px;border-top:1px solid var(--brd2);display:flex;flex-direction:column;flex-shrink:0;background:var(--bg0)}
+.ex-tape-hdr{display:grid;grid-template-columns:40px 1fr 1fr 30px;padding:3px 8px;background:var(--bg2);font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700}
+.ex-tape-hdr span:nth-child(2),.ex-tape-hdr span:nth-child(3){text-align:right}
+.ex-tape-hdr span:last-child{text-align:right}
+.ex-tape-list{flex:1;overflow-y:auto}
+.ex-tape-list::-webkit-scrollbar{width:2px}
+.ex-tape-row{display:grid;grid-template-columns:40px 1fr 1fr 30px;padding:2px 8px;font-size:10px;border-bottom:1px solid #0d0f16}
+.ex-tape-row span:nth-child(2),.ex-tape-row span:nth-child(3){text-align:right}
+.ex-tape-row span:last-child{text-align:right;font-weight:700;font-size:9px}
+
 .prow{padding:4px 8px;border-top:1px solid var(--brd2);background:var(--bg3);flex-shrink:0}
 .pbar{height:5px;border-radius:3px;overflow:hidden;display:flex;margin-bottom:3px}
 .pb-b{background:var(--gr2);transition:width .5s}
@@ -219,6 +264,7 @@ canvas{display:block}
 </style>
 </head>
 <body>
+<button id="float-toggle" onclick="document.body.classList.toggle('hide-top')">⇅</button>
 <div class="app">
 <div class="topbar">
   <div class="logo">Order<span>Book</span>.pro</div>
@@ -251,7 +297,7 @@ canvas{display:block}
       <option value="LINKUSDT">LINK/USDT</option>
     </select>
   </div>
-  <div class="cg"><span class="cl">Piață</span>
+  <div class="cg" id="div-mkt"><span class="cl">Piață</span>
     <div class="tog">
       <button class="tb on" id="tb-spot" onclick="setMkt('spot')">Spot</button>
       <button class="tb" id="tb-fut" onclick="setMkt('futures')">Futures</button>
@@ -262,6 +308,9 @@ canvas{display:block}
       <option value="1">1m</option><option value="5">5m</option><option value="15">15m</option>
       <option value="60">1h</option><option value="240">4h</option><option value="D" selected>1D</option>
     </select>
+  </div>
+  <div class="cg" id="div-dual" style="display:none"><span class="cl">Vizual</span>
+    <button class="ibtn" id="btn-dual" onclick="toggleDual()">📌 Arată FUT</button>
   </div>
   <div class="cg"><span class="cl">Min ordin (<span id="ql-u">ETH</span>)</span>
     <input class="ni" id="inp-min" type="number" value="50" min="0" step="any" oninput="applyF()">
@@ -301,6 +350,27 @@ canvas{display:block}
 
 <div class="page on" id="page-sing">
   <div class="tvw"><iframe id="tvf" src="" frameborder="0"></iframe></div>
+  
+  <div id="dual-panel">
+    <div class="brow">
+      <div class="panel">
+        <div class="phdr"><span class="ph-t" id="d-title-b">DUAL BID</span><span class="ph-s" id="d-bcnt">—</span></div>
+        <div class="colhdr g2" id="d-bid-ch"></div>
+        <div class="sa"><div id="d-blist"></div></div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><span class="ph-t" id="d-title-a">DUAL ASK</span><span class="ph-s" id="d-acnt">—</span></div>
+        <div class="colhdr g2" id="d-ask-ch"></div>
+        <div class="sa"><div id="d-alist"></div></div>
+      </div>
+      <div class="panel">
+        <div class="phdr"><span class="ph-t" id="d-title-t">DUAL TAPE</span><span class="ph-s" id="d-tcnt">live</span></div>
+        <div class="colhdr g4"><span class="ch">Ora</span><span class="ch">Preț</span><span class="ch">Vol</span><span class="ch">Tip</span></div>
+        <div class="sa"><div id="d-tlist"></div></div>
+      </div>
+    </div>
+  </div>
+  
   <div class="brow">
     <div class="panel">
       <div class="phdr"><span class="ph-t">BID</span><span class="ph-s" id="s-bcnt">—</span></div>
@@ -316,6 +386,32 @@ canvas{display:block}
     </div>
     <div class="panel">
       <div class="phdr"><span class="ph-t">Tape</span><span class="ph-s" id="s-tcnt">live</span></div>
+      
+      <div class="tape-stats">
+        <span class="ts-buy">BUY: <span id="ts-buy-vol">0</span></span>
+        <span class="ts-sell">SELL: <span id="ts-sell-vol">0</span></span>
+        <span class="ts-net">NET: <span id="ts-net-vol">0</span></span>
+      </div>
+      <div class="tape-filter-bar">
+        <select id="sel-tape-range" onchange="applyTapeRange()">
+          <option value="all">Toate</option>
+          <option value="today">Azi</option>
+          <option value="yesterday">Ieri</option>
+          <option value="7">7 zile</option>
+          <option value="14">14 zile</option>
+          <option value="30">1 Lună</option>
+          <option value="60">2 Luni</option>
+          <option value="90">3 Luni</option>
+          <option value="120">4 Luni</option>
+          <option value="150">5 Luni</option>
+          <option value="180">6 Luni</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input type="date" id="date-from" style="display:none">
+        <input type="date" id="date-to" style="display:none">
+        <button class="ibtn" style="height:24px;font-size:10px;padding:0 8px;" onclick="clearTapeHistory()">🗑 Clear</button>
+      </div>
+      
       <div class="colhdr g4"><span class="ch">Ora</span><span class="ch">Preț</span><span class="ch">Vol</span><span class="ch">Tip</span></div>
       <div class="sa"><div id="s-tlist"></div></div>
     </div>
@@ -325,7 +421,7 @@ canvas{display:block}
 <div class="page" id="page-cons">
   <div class="chips-bar">
     <div class="chips" id="chips"></div>
-    <div class="csi" id="csi">Selectează max 4 burse | Filtrele de mai sus (min ordin, balenă, grupare, QTY) se aplică identic ca în Regim Singular</div>
+    <div class="csi" id="csi">Selectează max 4 burse. Filtrarea BID/ASK și a Tape-ului este separată pentru fiecare bursă.</div>
   </div>
   <div class="cons-body" id="cons-body"></div>
   <div class="cons-sum" id="cons-sum"></div>
@@ -418,33 +514,41 @@ canvas{display:block}
       <div class="mtab" id="t2">
         <div class="msec">Mărime font</div>
         <div class="mrow">
-          <div class="mf"><label>Dimensiune text</label>
+          <div class="mf"><label>Dimensiune text ordine</label>
             <select class="mi" id="m-fs">
               <option value="10px">Mic (10px)</option><option value="11px">Normal (11px)</option>
               <option value="12px" selected>Mediu (12px)</option><option value="13px">Mare (13px)</option>
               <option value="14px">Extra mare (14px)</option>
             </select>
           </div>
-          <div class="mf"><label>Preview</label>
-            <div style="background:var(--bg0);border:1px solid var(--brd);border-radius:4px;padding:6px 8px;font-size:12px">
-              <span style="color:var(--col-bid)">2024.50</span> / <span style="color:var(--col-ask)">2025.00</span>
-            </div>
+          <div class="mf"><label>Dimensiune text balene</label>
+            <select class="mi" id="m-fswh">
+              <option value="12px">Mediu (12px)</option>
+              <option value="13px" selected>Mare (13px)</option>
+              <option value="14px">Extra mare (14px)</option>
+              <option value="16px">Gigantic (16px)</option>
+            </select>
           </div>
         </div>
-        <div class="msec">Culori</div>
+        <div class="msec">Culori Ordine Normale</div>
         <div class="mrow">
           <div class="mf"><label>Preț BID (cumpărători)</label><input class="mi" type="color" id="m-cbid" value="#00b87c"></div>
           <div class="mf"><label>Preț ASK (vânzători)</label><input class="mi" type="color" id="m-cask" value="#c4002a"></div>
         </div>
         <div class="mrow">
-          <div class="mf"><label>Balenă (highlight)</label><input class="mi" type="color" id="m-cwh" value="#ffc340"></div>
+          <div class="mf"><label>Culoare Volum / Cantitate</label><input class="mi" type="color" id="m-cvol" value="#7a85a8"></div>
           <div></div>
+        </div>
+        <div class="msec">Culori Balene (Highlight)</div>
+        <div class="mrow">
+          <div class="mf"><label>Culoare Text Balenă</label><input class="mi" type="color" id="m-cwh" value="#ffc340"></div>
+          <div class="mf"><label>Culoare Fundal Balenă</label><input class="mi" type="color" id="m-cwhbg" value="#2a2510"></div>
         </div>
       </div>
       <div class="mtab" id="t3">
-        <div class="msec">Filtru Tape</div>
+        <div class="msec">Filtru Tape (Regim Singular)</div>
         <div class="mrow">
-          <div class="mf"><label>Min tranzacție</label><input class="mi" id="m-mt" type="number" value="5" step="any"></div>
+          <div class="mf"><label>Min tranzacție</label><input class="mi" id="m-mt" type="number" value="5" step="any"><small>Se înregistrează tot, dar afișează peste acest prag</small></div>
           <div class="mf"><label>Tranzacție mare</label><input class="mi" id="m-bt" type="number" value="500" step="any"></div>
         </div>
         <div class="mrow">
@@ -485,15 +589,15 @@ canvas{display:block}
 var C={
   minOrder:50,whale:1000,rows:30,fdepth:500,grp:0,qu:'base',
   bars:true,spr:true,imb:true,
-  fs:'12px',
-  colBid:'#00b87c',colAsk:'#c4002a',colWh:'#ffc340',
-  minTape:5,bigTrade:500,tapeCount:50,tapeQu:'base',
+  fs:'12px', fsWh:'13px',
+  colBid:'#00b87c',colAsk:'#c4002a',colWh:'#ffc340', colVol:'#7a85a8', colWhBg:'#2a2510',
+  minTape:5,bigTrade:500,tapeCount:1000,tapeQu:'base',
   alertToast:true,alertThr:5000,alertCd:30,
-  autoSnap:false,snapInt:60,snapMax:100
+  autoSnap:false,snapInt:60,snapMax:100,
+  tapeRange:'all',
+  consFilters:{} 
 };
 
-/* Praguri implicite REZONABILE per monedă — folosite prima dată,
-   până utilizatorul își setează propriile valori (care apoi se salvează). */
 var PAIR_DEFAULTS={
   ETHUSDT:    {minOrder:50,   whale:1000,   minTape:5,    bigTrade:500,   dec:1},
   BTCUSDT:    {minOrder:0.01, whale:0.5,    minTape:0.001,bigTrade:0.1,   dec:1},
@@ -517,18 +621,23 @@ var PAIRS={
 };
 
 var SYM={
-  binance:function(p){return p;}, bybit:function(p){return p;},
+  binance:function(p){return p;}, 
+  binance_fut:function(p){return p;},
+  bybit:function(p){return p;},
   okx:function(p){return p.replace('USDT','-USDT');},
   kraken:function(p){var m={BTCUSDT:'XBT/USD',ETHUSDT:'ETH/USD',SOLUSDT:'SOL/USD',XRPUSDT:'XRP/USD',BNBUSDT:'BNB/USD',ADAUSDT:'ADA/USD',DOGEUSDT:'DOGE/USD',AVAXUSDT:'AVAX/USD',LINKUSDT:'LINK/USD'};return m[p]||p.replace('USDT','/USD');},
-  coinbase:function(p){return p.replace('USDT','-USDT');}
+  coinbase:function(p){return p.replace('USDT','-USD');},
+  coinbase_fut:function(p){return p.replace('USDT','-PERP-INTX');}
 };
 
 var ALL_EX=[
   {id:'binance',n:'Binance',c:'#f0b90b',hasWS:true,sp:0},
+  {id:'binance_fut',n:'Binance Fut',c:'#e0a800',hasWS:true,sp:0.01},
   {id:'bybit',n:'Bybit',c:'#f7a600',hasWS:true,sp:0.04},
   {id:'okx',n:'OKX',c:'#00c2ff',hasWS:true,sp:0.05},
   {id:'kraken',n:'Kraken',c:'#7c4dff',hasWS:true,sp:0.08},
-  {id:'coinbase',n:'Coinbase',c:'#0052ff',hasWS:false,sp:0.07},
+  {id:'coinbase',n:'Coinbase',c:'#0052ff',hasWS:true,sp:0.07},
+  {id:'coinbase_fut',n:'Coinbase Fut',c:'#3b6ef5',hasWS:true,sp:0.09},
   {id:'bitfinex',n:'Bitfinex',c:'#00b74a',hasWS:false,sp:0.12},
   {id:'htx',n:'HTX',c:'#e84142',hasWS:false,sp:0.15},
   {id:'kucoin',n:'KuCoin',c:'#00a3e0',hasWS:false,sp:0.10},
@@ -543,10 +652,16 @@ var exBooks={};
 var curPair='ETHUSDT',curEx='binance',curPage='sing',curMkt='spot';
 var singWsBook=null,singWsTrade=null,singKey='';
 var consWS={};
+var consPingInts={};
+var singPingInts={};
 var liveBids={},liveAsks={},liveTape=[];
 var livePrice=0;
 var simVols={};
 var snapTimer=null,lastAlertTs=0;
+
+/* DUAL MODE VARS */
+var singDual = false;
+var D = {bids:{}, asks:{}, tape:[], price:0, wsBook:null, wsTrade:null, key:'', pings:{}};
 
 /* ════ UTILS ════ */
 function rn(a,b){return Math.random()*(b-a)+a}
@@ -578,8 +693,55 @@ function setLive(on,txt){
 }
 
 /* ════════════════════════════════════
-   SETĂRI PER MONEDĂ — salvate în localStorage,
-   se încarcă automat la schimbarea perechii
+   PERSISTENT TAPE HISTORY (LocalStorage)
+════════════════════════════════════ */
+function getTapeStoreKey(){ return 'ob_tape_'+curPair+'_'+curEx+'_'+curMkt; }
+function loadTapeHistory(){
+  try {
+    var saved = localStorage.getItem(getTapeStoreKey());
+    if(saved) liveTape = JSON.parse(saved);
+    else liveTape = [];
+  } catch(e) { liveTape = []; }
+}
+function saveTapeHistory(){
+  try {
+    if(liveTape.length > 50000) liveTape = liveTape.slice(0, 50000);
+    localStorage.setItem(getTapeStoreKey(), JSON.stringify(liveTape));
+  } catch(e) {
+    liveTape = liveTape.slice(0, 10000);
+    try { localStorage.setItem(getTapeStoreKey(), JSON.stringify(liveTape)); } catch(e2) {}
+  }
+}
+function clearTapeHistory(){
+  if(confirm('Sigur ștergi istoricul tranzacțiilor salvate pentru ' + curPair + '?')){
+    liveTape = [];
+    localStorage.removeItem(getTapeStoreKey());
+    renderSing();
+    showToast('🗑 Istoric șters');
+  }
+}
+setInterval(saveTapeHistory, 5000);
+
+/* CONSTRUCTOR TAPE PERSISTENCE */
+function getConsTapeStoreKey(exId, pair){ return 'ob_cons_tape_'+exId+'_'+pair; }
+function loadConsTape(exId, pair){
+  try {
+    var saved = localStorage.getItem(getConsTapeStoreKey(exId, pair));
+    if(saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [];
+}
+function saveConsTapes(){
+  consSel.forEach(function(exId){
+    if(exBooks[exId] && exBooks[exId].tape && exBooks[exId].tape.length > 0) {
+      try { localStorage.setItem(getConsTapeStoreKey(exId, curPair), JSON.stringify(exBooks[exId].tape)); } catch(e) {}
+    }
+  });
+}
+setInterval(saveConsTapes, 5000);
+
+/* ════════════════════════════════════
+   SETĂRI PER MONEDĂ (SINGULAR & CONSTRUCTOR)
 ════════════════════════════════════ */
 function getPairStore(){try{return JSON.parse(localStorage.getItem('ob_pair_settings')||'{}');}catch(e){return{};}}
 function savePairSettings(){
@@ -589,6 +751,13 @@ function savePairSettings(){
   var b=document.getElementById('pair-badge');
   if(b){b.textContent='💾 '+pm().u;b.title='Setări salvate pentru '+pm().u;}
 }
+function getConsStore(){try{return JSON.parse(localStorage.getItem('ob_cons_settings')||'{}');}catch(e){return{};}}
+function saveConsSettings(){
+  var store=getConsStore();
+  store[curPair]=C.consFilters;
+  try{localStorage.setItem('ob_cons_settings',JSON.stringify(store));}catch(e){}
+}
+
 function loadPairSettings(pair){
   var store=getPairStore();
   var saved=store[pair];
@@ -606,6 +775,13 @@ function loadPairSettings(pair){
   document.getElementById('ql-u2').textContent=unit();
   var b=document.getElementById('pair-badge');
   if(b){b.textContent=(saved?'💾 ':'⭐ ')+PAIRS[pair].u;b.title=saved?'Setări personalizate salvate pentru '+PAIRS[pair].u:'Setări implicite pentru '+PAIRS[pair].u+' (nesalvate încă)';}
+  
+  var consStore = getConsStore();
+  var savedCons = consStore[pair] || {};
+  C.consFilters = {};
+  ALL_EX.forEach(function(ex) {
+    C.consFilters[ex.id] = savedCons[ex.id] || { minBid: def.minOrder, whBid: def.whale, minAsk: def.minOrder, whAsk: def.whale, minTapeBuy: def.minTape, minTapeSell: def.minTape, tapeType: 'all' };
+  });
 }
 
 /* ════ PAGES ════ */
@@ -618,7 +794,9 @@ function goPage(p){
   document.getElementById('nb-'+p).classList.add('on');
   curPage=p;
   document.getElementById('div-tf').style.display=p==='sing'?'':'none';
+  document.getElementById('div-dual').style.display=p==='sing'?'':'none';
   document.getElementById('snap-btn').style.display=(p==='sing'||p==='cons')?'':'none';
+  document.getElementById('div-mkt').style.display=p==='sing'?'':'none';
   if(p==='stat')renderStat();
   if(p==='hist')renderHist();
   if(p==='cons'){buildChips();connectAllCons();renderCons();}
@@ -630,10 +808,7 @@ function updTV(){
   var pair=curPair;
   var tf=document.getElementById('sel-tf').value;
   var sym=ex+':'+pair;
-  document.getElementById('tvf').src=
-    'https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(sym)
-    +'&interval='+tf+'&theme=dark&style=1&locale=ro&toolbarbg=0f1219'
-    +'&hide_side_toolbar=0&allow_symbol_change=1';
+  document.getElementById('tvf').src='https://s.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&theme=dark&style=1&locale=ro';
 }
 
 function setMkt(m){
@@ -641,19 +816,35 @@ function setMkt(m){
   document.getElementById('tb-spot').className='tb'+(m==='spot'?' on':'');
   document.getElementById('tb-fut').className='tb'+(m==='futures'?' on':'');
   updTV();connectSing(curPair);
+  if(singDual) { connectDual(curEx, curMkt === 'spot' ? 'futures' : 'spot', curPair); updateDualBtn(); }
 }
 
 /* ════════════════════════════════════
-   WEBSOCKET SINGULAR — cu sincronizare corectă
-   (previne desincronizarea BID/ASK și trade-uri pierdute)
+   WEBSOCKET SINGULAR
 ════════════════════════════════════ */
+function clearSingPings() {
+  Object.keys(singPingInts).forEach(function(k){clearInterval(singPingInts[k]);});
+  singPingInts = {};
+}
+
 function connectSing(pair){
   var key=pair+'_'+curEx+'_'+curMkt;
   singKey=key;
   setLive(false,'Conectare '+curEx+' '+pair.replace('USDT','/USDT')+'…');
-  liveBids={};liveAsks={};liveTape=[];livePrice=pm().p;
+  liveBids={};liveAsks={};livePrice=pm().p;
+  
+  if(curPage==='sing'){
+    document.getElementById('s-blist').innerHTML='';
+    document.getElementById('s-alist').innerHTML='';
+    document.getElementById('spr-val').textContent='—';
+  }
+  
   if(singWsBook){try{singWsBook.close();}catch(e){} singWsBook=null;}
   if(singWsTrade){try{singWsTrade.close();}catch(e){} singWsTrade=null;}
+  clearSingPings();
+
+  loadTapeHistory(); 
+  renderSing(); 
 
   if(curEx==='binance') connectBinanceSing(pair,key);
   else if(curEx==='bybit') connectBybitSing(pair,key);
@@ -663,10 +854,10 @@ function connectSing(pair){
   else {setLive(false,'Simulat: '+curEx);initSimVols();renderSing();}
 }
 
-/* ── Coinbase — doar Spot (Coinbase Advanced Trade nu oferă Futures public) ── */
+/* ── Coinbase ── */
 function connectCoinbaseSing(pair,key){
   if(curMkt==='futures'){setLive(false,'Coinbase nu are Futures public — afișăm Spot');}
-  var sym=SYM.coinbase(pair).replace('-USDT','-USD'); /* Coinbase cotează majoritatea perechilor în USD */
+  var sym=SYM.coinbase(pair);
   try{
     singWsBook=new WebSocket('wss://advanced-trade-ws.coinbase.com');
     singWsBook.onopen=function(){
@@ -686,7 +877,7 @@ function connectCoinbaseSing(pair,key){
           else{if(v===0)delete liveAsks[u.price_level];else liveAsks[u.price_level]=v;}
         });
       });
-      calcMid();if(curPage==='sing')renderSing();
+      calcMid();reqRenderSing();
     };
     singWsBook.onerror=function(){setLive(false,'Coinbase eroare conexiune');};
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectCoinbaseSing(pair,key);},3000);}};
@@ -703,19 +894,19 @@ function connectCoinbaseSing(pair,key){
           (ev.trades||[]).forEach(function(t){
             var qty=+t.size,prc=+t.price,sell=(t.side==='SELL'||t.side==='sell');
             if(!isFinite(qty)||qty<=0)return;
-            liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
-            if(liveTape.length>400)liveTape.pop();
+            liveTape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+            if(liveTape.length > 50000) liveTape.pop();
             checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
           });
         });
-        if(curPage==='sing')renderSing();
+        reqRenderSing();
       };
       singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectCoinbaseTrade();},2500);};
     }
   }catch(ex){setLive(false,'Coinbase indisponibil');connectBinanceSing(pair,key);}
 }
 
-/* ── Binance — cu buffer + sincronizare lastUpdateId (fix desync BID/ASK) ── */
+/* ── Binance ── */
 function connectBinanceSing(pair,key){
   var sym=pair.toLowerCase();
   var isFut=curMkt==='futures';
@@ -723,13 +914,11 @@ function connectBinanceSing(pair,key){
   var buf=[],snapReady=false,lastId=0,lastFinalId=null,resyncing=false;
   var lastTradeTs=Date.now(),tradeConnStartTs=Date.now();
 
-  /* Adrese posibile pentru depth (orderbook), încercate în ordine dacă una nu răspunde */
   var depthUrls=isFut?[
     'wss://fstream.binance.com/public/ws/'+sym+'@depth@100ms',
     'wss://fstream.binance.com/ws/'+sym+'@depth@100ms'
   ]:[ 'wss://stream.binance.com:9443/ws/'+sym+'@depth@100ms' ];
 
-  /* Adrese posibile pentru tranzacții (Tape), încercate automat pe rând */
   var tradeUrls=isFut?[
     'wss://fstream.binance.com/market/ws/'+sym+'@aggTrade',
     'wss://fstream.binance.com/ws/'+sym+'@aggTrade',
@@ -747,16 +936,13 @@ function connectBinanceSing(pair,key){
       (d.bids||[]).forEach(function(r){liveBids[r[0]]=+r[1];});
       (d.asks||[]).forEach(function(r){liveAsks[r[0]]=+r[1];});
       lastId=d.lastUpdateId||0; lastFinalId=null;
-      /* aplicăm din buffer doar evenimentele mai noi decât snapshot-ul */
       var toApply=buf.filter(function(ev){return (ev.u||0)>lastId;});
       toApply.forEach(function(ev){applyDiff(ev);lastId=ev.u;lastFinalId=ev.u;});
       buf=[];snapReady=true;resyncing=false;
       calcMid();initSimVols();
-      if(curPage==='sing')renderSing();
+      reqRenderSing();
     }).catch(function(){setLive(false,'API indisponibil, reîncercăm…');setTimeout(function(){if(singKey===key){resyncing=false;loadSnapshot();}},4000);});
   }
-  /* Re-sincronizare completă — apelată automat când se detectează o gaură
-     în fluxul de date (un mesaj lipsă), ca să nu rămână niveluri „fantomă". */
   function resyncBook(reason){
     if(resyncing)return;
     resyncing=true;snapReady=false;buf=[];lastFinalId=null;
@@ -764,7 +950,6 @@ function connectBinanceSing(pair,key){
     loadSnapshot();
   }
 
-  /* ── Orderbook (BID/ASK), cu rotație automată de adrese ── */
   function openDepthSocket(urlIdx){
     if(singKey!==key)return;
     urlIdx=urlIdx||0;
@@ -783,8 +968,6 @@ function connectBinanceSing(pair,key){
         var d;try{d=JSON.parse(e.data);}catch(ex){return;}
         if(!snapReady){buf.push(d);return;}
         if(isFut){
-          /* Futures: verificăm lanțul pu -> u. Dacă e ruptă continuitatea,
-             resincronizăm imediat (previne blocurile "fantomă" care nu dispar) */
           if(lastFinalId!==null && d.pu!==lastFinalId){resyncBook('secvență întreruptă');return;}
           if((d.u||0)<=lastId)return;
           applyDiff(d);lastId=d.u;lastFinalId=d.u;
@@ -793,7 +976,7 @@ function connectBinanceSing(pair,key){
           applyDiff(d);lastId=d.u;
         }
         calcMid();
-        if(curPage==='sing')renderSing();
+        reqRenderSing();
       };
       wsB.onerror=function(){};
       wsB.onclose=function(){
@@ -809,19 +992,6 @@ function connectBinanceSing(pair,key){
   }
   openDepthSocket(0);
 
-  /* Plasă de siguranță: indiferent dacă am detectat sau nu vreo eroare de
-     sincronizare, reîmprospătăm COMPLET orderbook-ul de la zero (fresh
-     snapshot) la fiecare 12 secunde pe Futures. Așa, orice nivel „fantomă"
-     rămas din greșeală dispare garantat în maximum 12 secunde, nu rămâne
-     blocat pentru totdeauna. */
-  if(isFut){
-    var safetyResync=setInterval(function(){
-      if(singKey!==key){clearInterval(safetyResync);return;}
-      resyncBook('actualizare periodică');
-    },12000);
-  }
-
-  /* ── Tranzacții (Tape) — încearcă automat mai multe adrese până găsește una funcțională ── */
   var tradeUrlIdx=0,tradeWorking=false;
   function openTradeSocket(urlIdx){
     if(singKey!==key)return;
@@ -836,10 +1006,11 @@ function connectBinanceSing(pair,key){
         var prc=+(d.p||0),qty=+(d.q||0),sell=d.m===true;
         if(!isFinite(qty)||qty<=0||!isFinite(prc)||prc<=0)return;
         tradeWorking=true;tradeUrlIdx=urlIdx;lastTradeTs=Date.now();
-        liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});
-        if(liveTape.length>400)liveTape.pop();
+        
+        liveTape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(liveTape.length > 50000) liveTape.pop();
         checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
-        if(curPage==='sing')renderSing();
+        reqRenderSing();
       };
       wsT.onerror=function(){};
       wsT.onclose=function(){
@@ -850,13 +1021,9 @@ function connectBinanceSing(pair,key){
   }
   openTradeSocket(0);
 
-  /* Paznic: dacă adresa curentă de tranzacții nu a livrat NIMIC în 7 secunde,
-     trecem automat la următoarea adresă din listă. Se repetă în buclă prin
-     toate variantele până găsește una care chiar livrează date — fără să
-     faci tu nimic. */
   var watchdog=setInterval(function(){
     if(singKey!==key){clearInterval(watchdog);return;}
-    if(tradeWorking)return; /* deja am găsit o adresă bună, nu mai schimbăm */
+    if(tradeWorking)return;
     var sinceOpen=Date.now()-tradeConnStartTs;
     if(sinceOpen>7000){
       tradeUrlIdx=(tradeUrlIdx+1)%tradeUrls.length;
@@ -866,21 +1033,34 @@ function connectBinanceSing(pair,key){
   },3000);
 }
 
-/* ── Bybit — Spot sau Linear (USDT Perpetual Futures), în funcție de comutator ── */
+/* ── Bybit ── */
 function connectBybitSing(pair,key){
   var sym=SYM.bybit(pair);
   var cat=curMkt==='futures'?'linear':'spot';
   var wsUrl='wss://stream.bybit.com/v5/public/'+cat;
   try{
     singWsBook=new WebSocket(wsUrl);
-    singWsBook.onopen=function(){singWsBook.send(JSON.stringify({op:'subscribe',args:['orderbook.200.'+sym]}));setLive(true,'LIVE Bybit '+(curMkt==='futures'?'Futures':'')+' — '+pair.replace('USDT','/USDT'));};
+    singWsBook.onopen=function(){
+      var depth = curMkt === 'futures' ? 200 : 100;
+      singWsBook.send(JSON.stringify({op:'subscribe',args:['orderbook.'+depth+'.'+sym]}));
+      setLive(true,'LIVE Bybit '+(curMkt==='futures'?'Futures':'')+' — '+pair.replace('USDT','/USDT'));
+      
+      if(singPingInts.bybit) clearInterval(singPingInts.bybit);
+      singPingInts.bybit = setInterval(function(){
+        if(singWsBook && singWsBook.readyState===1 && singKey===key) {
+          singWsBook.send(JSON.stringify({op:'ping'}));
+        } else if(singKey!==key) {
+          clearInterval(singPingInts.bybit);
+        }
+      }, 20000);
+    };
     singWsBook.onmessage=function(e){
       if(singKey!==key)return;
       var d=JSON.parse(e.data);if(!d.data)return;var dd=d.data;
       if(d.type==='snapshot'){liveBids={};liveAsks={};}
       (dd.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveBids[r[0]];else liveBids[r[0]]=v;});
       (dd.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveAsks[r[0]];else liveAsks[r[0]]=v;});
-      calcMid();if(curPage==='sing')renderSing();
+      calcMid();reqRenderSing();
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectBybitSing(pair,key);},3000);}};
     connectBybitTrade();
@@ -894,17 +1074,18 @@ function connectBybitSing(pair,key){
         d.data.forEach(function(t){
           var qty=+(t.v||t.size||0),prc=+(t.p||0),sell=(t.S==='Sell');
           if(qty<=0)return;
-          liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
+          liveTape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+          if(liveTape.length > 50000) liveTape.pop();
           checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
         });
-        if(curPage==='sing')renderSing();
+        reqRenderSing();
       };
       singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectBybitTrade();},2500);};
     }
   }catch(ex){setLive(false,'Bybit indisponibil');connectBinanceSing(pair,key);}
 }
 
-/* ── OKX — Spot sau Swap (Perpetual Futures), în funcție de comutator ── */
+/* ── OKX ── */
 function connectOkxSing(pair,key){
   var sym=curMkt==='futures'?SYM.okx(pair)+'-SWAP':SYM.okx(pair);
   try{
@@ -918,10 +1099,16 @@ function connectOkxSing(pair,key){
       if(d.action==='snapshot'){liveBids={};liveAsks={};}
       (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveBids[r[0]];else liveBids[r[0]]=v;});
       (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveAsks[r[0]];else liveAsks[r[0]]=v;});
-      calcMid();if(curPage==='sing')renderSing();
+      calcMid();reqRenderSing();
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectOkxSing(pair,key);},3000);}};
-    setInterval(function(){if(singWsBook&&singWsBook.readyState===1&&singKey===key)singWsBook.send('ping');},25000);
+    
+    if(singPingInts.okx) clearInterval(singPingInts.okx);
+    singPingInts.okx = setInterval(function(){
+      if(singWsBook && singWsBook.readyState===1 && singKey===key) singWsBook.send('ping');
+      else if(singKey!==key) clearInterval(singPingInts.okx);
+    }, 25000);
+
     connectOkxTrade();
     function connectOkxTrade(){
       if(singKey!==key)return;
@@ -933,10 +1120,11 @@ function connectOkxSing(pair,key){
         d.data.forEach(function(t){
           var qty=+(t.sz||0),prc=+(t.px||0),sell=(t.side==='sell');
           if(qty<=0)return;
-          liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
+          liveTape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+          if(liveTape.length > 50000) liveTape.pop();
           checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
         });
-        if(curPage==='sing')renderSing();
+        reqRenderSing();
       };
       singWsTrade.onclose=function(){if(singKey===key)setTimeout(function(){if(singKey===key)connectOkxTrade();},2500);};
     }
@@ -956,10 +1144,16 @@ function connectKrakenSing(pair,key){
       if(d.type==='snapshot'){liveBids={};liveAsks={};}
       (dd.bids||[]).forEach(function(r){var v=+r.qty;if(v===0)delete liveBids[r.price];else liveBids[r.price]=v;});
       (dd.asks||[]).forEach(function(r){var v=+r.qty;if(v===0)delete liveAsks[r.price];else liveAsks[r.price]=v;});
-      calcMid();if(curPage==='sing')renderSing();
+      calcMid();reqRenderSing();
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectKrakenSing(pair,key);},3000);}};
-    setInterval(function(){if(singWsBook&&singWsBook.readyState===1&&singKey===key)singWsBook.send(JSON.stringify({method:'ping'}));},25000);
+
+    if(singPingInts.kraken) clearInterval(singPingInts.kraken);
+    singPingInts.kraken = setInterval(function(){
+      if(singWsBook && singWsBook.readyState===1 && singKey===key) singWsBook.send(JSON.stringify({method:'ping'}));
+      else if(singKey!==key) clearInterval(singPingInts.kraken);
+    }, 25000);
+
     singWsTrade=new WebSocket('wss://ws.kraken.com/v2');
     singWsTrade.onopen=function(){singWsTrade.send(JSON.stringify({method:'subscribe',params:{channel:'trade',symbol:[sym]}}));};
     singWsTrade.onmessage=function(e){
@@ -968,10 +1162,11 @@ function connectKrakenSing(pair,key){
       (Array.isArray(d.data)?d.data:[d.data]).forEach(function(t){
         var qty=+(t.qty||0),prc=+(t.price||0),sell=(t.side==='sell');
         if(qty<=0)return;
-        liveTape.unshift({time:ts(),price:prc,v:qty,type:sell?'SELL':'BUY'});if(liveTape.length>400)liveTape.pop();
+        liveTape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(liveTape.length > 50000) liveTape.pop();
         checkWhaleAlert(qty,prc,sell?'SELL':'BUY');
       });
-      if(curPage==='sing')renderSing();
+      reqRenderSing();
     };
   }catch(ex){setLive(false,'Kraken indisponibil');connectBinanceSing(pair,key);}
 }
@@ -983,76 +1178,530 @@ function calcMid(){
 }
 
 /* ════════════════════════════════════
-   CONSTRUCTOR — conexiuni multi-exchange
+   DUAL MODE LOGIC (SINGULAR)
 ════════════════════════════════════ */
+function updateDualBtn() {
+  var btn = document.getElementById('btn-dual');
+  var dualMkt = curMkt === 'spot' ? 'FUT' : 'SPOT';
+  if(singDual){
+    btn.textContent = '✖ Închide ' + dualMkt;
+    btn.style.background = 'var(--ac2)';
+    btn.style.color = '#fff';
+    document.getElementById('d-title-b').textContent = 'BID (' + (dualMkt === 'FUT' ? 'FUT' : 'SPOT') + ')';
+    document.getElementById('d-title-a').textContent = 'ASK (' + (dualMkt === 'FUT' ? 'FUT' : 'SPOT') + ')';
+    document.getElementById('d-title-t').textContent = 'TAPE (' + (dualMkt === 'FUT' ? 'FUT' : 'SPOT') + ')';
+  } else {
+    btn.textContent = '📌 Arată ' + dualMkt;
+    btn.style.background = '';
+    btn.style.color = '';
+  }
+}
+
+function toggleDual() {
+  singDual = !singDual;
+  if(singDual){
+    document.getElementById('tvw').style.display='none';
+    document.getElementById('dual-panel').style.display='flex';
+    connectDual(curEx, curMkt === 'spot' ? 'futures' : 'spot', curPair);
+    renderDual();
+  } else {
+    document.getElementById('tvw').style.display='block';
+    document.getElementById('dual-panel').style.display='none';
+    closeDual();
+  }
+  updateDualBtn();
+}
+
+function closeDual() {
+  if(D.wsBook){try{D.wsBook.onclose=null;D.wsBook.close();}catch(e){} D.wsBook=null;}
+  if(D.wsTrade){try{D.wsTrade.onclose=null;D.wsTrade.close();}catch(e){} D.wsTrade=null;}
+  Object.keys(D.pings).forEach(function(k){clearInterval(D.pings[k]);});
+  D.pings={};
+}
+
+function connectDual(ex, mkt, pair) {
+  closeDual();
+  D.bids={}; D.asks={}; D.tape=[]; D.price=pm().p;
+  D.key = 'dual_'+ex+'_'+mkt+'_'+pair;
+  
+  if(ex==='binance') connectDualBinance(mkt, pair);
+  else if(ex==='bybit') connectDualBybit(mkt, pair);
+  else if(ex==='okx') connectDualOkx(mkt, pair);
+  else if(ex==='kraken') connectDualKraken(mkt, pair);
+  else if(ex==='coinbase') connectDualCoinbase(mkt, pair);
+  else connectDualBinance(mkt, pair); // fallback
+}
+
+function calcDualMid(){
+  var ba=Object.keys(D.bids).map(Number).sort(function(a,b){return b-a;});
+  var aa=Object.keys(D.asks).map(Number).sort(function(a,b){return a-b;});
+  if(ba.length&&aa.length)D.price=(ba[0]+aa[0])/2;
+}
+
+function connectDualBinance(mkt, pair) {
+  var sym = pair.toLowerCase();
+  var isFut = mkt === 'futures';
+  var apiBase = isFut ? 'https://fapi.binance.com/fapi/v1/' : 'https://api.binance.com/api/v3/';
+  var wsUrl = isFut ? 'wss://fstream.binance.com/stream?streams='+sym+'@depth@100ms/'+sym+'@aggTrade' : 'wss://stream.binance.com:9443/stream?streams='+sym+'@depth@100ms/'+sym+'@trade';
+  
+  fetch(apiBase+'depth?symbol='+pair+'&limit=200').then(function(r){return r.json();}).then(function(d){
+    if(D.key !== 'dual_binance_'+mkt+'_'+pair) return;
+    (d.bids||[]).forEach(function(r){D.bids[r[0]]=+r[1];});
+    (d.asks||[]).forEach(function(r){D.asks[r[0]]=+r[1];});
+    calcDualMid(); reqRenderDual();
+  });
+
+  D.wsBook = new WebSocket(wsUrl);
+  D.wsBook.onmessage = function(e) {
+    if(D.key !== 'dual_binance_'+mkt+'_'+pair) return;
+    var msg = JSON.parse(e.data);
+    if(!msg.data) return;
+    var stream = msg.stream;
+    if(stream && stream.indexOf('@depth') > -1) {
+      (msg.data.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.bids[r[0]];else D.bids[r[0]]=v;});
+      (msg.data.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.asks[r[0]];else D.asks[r[0]]=v;});
+    } else if(stream && (stream.indexOf('@trade')>-1 || stream.indexOf('@aggTrade')>-1)) {
+      var prc=+msg.data.p, qty=+msg.data.q, sell=msg.data.m===true;
+      D.tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+      if(D.tape.length > 100) D.tape.pop();
+    }
+    calcDualMid();
+    reqRenderDual();
+  };
+  D.wsBook.onclose = function() { if(singDual && D.key === 'dual_binance_'+mkt+'_'+pair) setTimeout(function(){connectDualBinance(mkt, pair);}, 3000); };
+}
+
+function connectDualBybit(mkt, pair) {
+  var sym = SYM.bybit(pair);
+  var cat = mkt === 'futures' ? 'linear' : 'spot';
+  var wsUrl = 'wss://stream.bybit.com/v5/public/'+cat;
+  D.wsBook = new WebSocket(wsUrl);
+  D.wsBook.onopen = function() {
+    if(D.key !== 'dual_bybit_'+mkt+'_'+pair) {D.wsBook.close(); return;}
+    var depth = mkt === 'futures' ? 200 : 100;
+    D.wsBook.send(JSON.stringify({op:'subscribe',args:['orderbook.'+depth+'.'+sym, 'publicTrade.'+sym]}));
+    D.pings.bybit = setInterval(function(){ if(D.wsBook.readyState===1) D.wsBook.send(JSON.stringify({op:'ping'})); }, 20000);
+  };
+  D.wsBook.onmessage = function(e) {
+    if(D.key !== 'dual_bybit_'+mkt+'_'+pair) return;
+    var d = JSON.parse(e.data);
+    if(!d.data) return;
+    var dd = d.data;
+    if(d.topic && d.topic.indexOf('orderbook')>-1) {
+      (dd.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.bids[r[0]];else D.bids[r[0]]=v;});
+      (dd.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.asks[r[0]];else D.asks[r[0]]=v;});
+    } else if(d.topic && d.topic.indexOf('publicTrade')>-1) {
+      dd.forEach(function(t){
+        var qty=+t.v, prc=+t.p, sell=t.S==='Sell';
+        D.tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(D.tape.length>100) D.tape.pop();
+      });
+    }
+    calcDualMid();
+    reqRenderDual();
+  };
+  D.wsBook.onclose = function() {
+    if(singDual && D.key === 'dual_bybit_'+mkt+'_'+pair) setTimeout(function(){connectDualBybit(mkt, pair);}, 3000);
+    else if(D.pings.bybit) {clearInterval(D.pings.bybit); delete D.pings.bybit;}
+  };
+}
+
+function connectDualOkx(mkt, pair) {
+  var sym = mkt === 'futures' ? SYM.okx(pair)+'-SWAP' : SYM.okx(pair);
+  D.wsBook = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+  D.wsBook.onopen = function() {
+    if(D.key !== 'dual_okx_'+mkt+'_'+pair) {D.wsBook.close(); return;}
+    D.wsBook.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:sym},{channel:'trades',instId:sym}]}));
+    D.pings.okx = setInterval(function(){ if(D.wsBook.readyState===1) D.wsBook.send('ping'); }, 25000);
+  };
+  D.wsBook.onmessage = function(e) {
+    if(D.key !== 'dual_okx_'+mkt+'_'+pair) return;
+    if(e.data==='pong') return;
+    var d = JSON.parse(e.data);
+    if(!d.data) return;
+    if(d.arg && d.arg.channel==='books'){
+      var dd = d.data[0];
+      (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.bids[r[0]];else D.bids[r[0]]=v;});
+      (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.asks[r[0]];else D.asks[r[0]]=v;});
+    } else if(d.arg && d.arg.channel==='trades'){
+      d.data.forEach(function(t){
+        var qty=+t.sz, prc=+t.px, sell=t.side==='sell';
+        D.tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(D.tape.length>100) D.tape.pop();
+      });
+    }
+    calcDualMid();
+    reqRenderDual();
+  };
+  D.wsBook.onclose = function() {
+    if(singDual && D.key === 'dual_okx_'+mkt+'_'+pair) setTimeout(function(){connectDualOkx(mkt, pair);}, 3000);
+    else if(D.pings.okx) {clearInterval(D.pings.okx); delete D.pings.okx;}
+  };
+}
+
+function connectDualKraken(mkt, pair) {
+  var sym = SYM.kraken(pair);
+  D.wsBook = new WebSocket('wss://ws.kraken.com/v2');
+  D.wsBook.onopen = function() {
+    if(D.key !== 'dual_kraken_'+mkt+'_'+pair) {D.wsBook.close(); return;}
+    D.wsBook.send(JSON.stringify({method:'subscribe',params:{channel:'book',symbol:[sym],depth:100}}));
+    D.wsBook.send(JSON.stringify({method:'subscribe',params:{channel:'trade',symbol:[sym]}}));
+    D.pings.kraken = setInterval(function(){ if(D.wsBook.readyState===1) D.wsBook.send(JSON.stringify({method:'ping'})); }, 25000);
+  };
+  D.wsBook.onmessage = function(e) {
+    if(D.key !== 'dual_kraken_'+mkt+'_'+pair) return;
+    var d = JSON.parse(e.data);
+    if(!d.data) return;
+    if(d.channel==='book'){
+      var dd = Array.isArray(d.data)?d.data[0]:d.data;
+      (dd.bids||[]).forEach(function(r){var v=+r.qty;if(v===0)delete D.bids[r.price];else D.bids[r.price]=v;});
+      (dd.asks||[]).forEach(function(r){var v=+r.qty;if(v===0)delete D.asks[r.price];else D.asks[r.price]=v;});
+    } else if(d.channel==='trade'){
+      (Array.isArray(d.data)?d.data:[d.data]).forEach(function(t){
+        var qty=+t.qty, prc=+t.price, sell=t.side==='sell';
+        D.tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+        if(D.tape.length>100) D.tape.pop();
+      });
+    }
+    calcDualMid();
+    reqRenderDual();
+  };
+  D.wsBook.onclose = function() {
+    if(singDual && D.key === 'dual_kraken_'+mkt+'_'+pair) setTimeout(function(){connectDualKraken(mkt, pair);}, 3000);
+    else if(D.pings.kraken) {clearInterval(D.pings.kraken); delete D.pings.kraken;}
+  };
+}
+
+function connectDualCoinbase(mkt, pair) {
+  var sym = SYM.coinbase(pair);
+  D.wsBook = new WebSocket('wss://advanced-trade-ws.coinbase.com');
+  D.wsBook.onopen = function() {
+    if(D.key !== 'dual_coinbase_'+mkt+'_'+pair) {D.wsBook.close(); return;}
+    D.wsBook.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'level2'}));
+    D.wsBook.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'market_trades'}));
+  };
+  D.wsBook.onmessage = function(e) {
+    if(D.key !== 'dual_coinbase_'+mkt+'_'+pair) return;
+    var d = JSON.parse(e.data);
+    if(d.channel==='l2_data'&&d.events){
+      d.events.forEach(function(ev){
+        (ev.updates||[]).forEach(function(u){
+          var side=u.side==='bid'?'bid':'ask';
+          var v=+u.new_quantity;
+          if(side==='bid'){if(v===0)delete D.bids[u.price_level];else D.bids[u.price_level]=v;}
+          else{if(v===0)delete D.asks[u.price_level];else D.asks[u.price_level]=v;}
+        });
+      });
+    } else if(d.channel==='market_trades'&&d.events){
+      d.events.forEach(function(ev){
+        (ev.trades||[]).forEach(function(t){
+          var qty=+t.size, prc=+t.price, sell=t.side==='SELL'||t.side==='sell';
+          D.tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+          if(D.tape.length>100) D.tape.pop();
+        });
+      });
+    }
+    calcDualMid();
+    reqRenderDual();
+  };
+  D.wsBook.onclose = function() { if(singDual && D.key === 'dual_coinbase_'+mkt+'_'+pair) setTimeout(function(){connectDualCoinbase(mkt, pair);}, 3000); };
+}
+
+var needsRenderDual = false;
+function reqRenderDual(){ if(curPage==='sing'&&singDual) needsRenderDual = true; }
+
+function renderDual(){
+  if(!singDual) return;
+  var grp=C.grp, rows=C.rows;
+  var bArr=Object.entries(D.bids).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,b){return b.p-a.p;});
+  var aArr=Object.entries(D.asks).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,b){return a.p-b.p;});
+  if(grp>0){bArr=groupArr(bArr,grp,'bid');aArr=groupArr(aArr,grp,'ask');}
+  var fb=bArr.filter(function(r){return (C.qu==='usdt'?r.v*(D.price||pm().p):r.v)>=C.minOrder;}).slice(0,rows);
+  var fa=aArr.filter(function(r){return (C.qu==='usdt'?r.v*(D.price||pm().p):r.v)>=C.minOrder;}).slice(0,rows);
+  var mbv=fb.length?Math.max.apply(null,fb.map(function(r){return r.v;})):1;
+  var mav=fa.length?Math.max.apply(null,fa.map(function(r){return r.v;})):1;
+
+  var qu=unit();
+  document.getElementById('d-bid-ch').innerHTML='<span class="ch">Preț</span><span class="ch">'+qu+'</span>';
+  document.getElementById('d-ask-ch').innerHTML='<span class="ch">Preț</span><span class="ch">'+qu+'</span>';
+  document.getElementById('d-bcnt').textContent=fb.length+' ordine';
+  document.getElementById('d-acnt').textContent=fa.length+' ordine';
+
+  function mkRows(arr,side,mv){
+    var h='';
+    arr.forEach(function(r){
+      var q=C.qu==='usdt'?r.v*(D.price||pm().p):r.v;
+      var w=q>=C.whale,pct=C.bars?(r.v/mv*50).toFixed(0):0;
+      h+='<div class="or g2'+(w?' wh':'')+'"><div class="vb '+(side==='b'?'vb-b':'vb-a')+'" style="width:'+pct+'%"></div>';
+      if(side==='b'){
+        h+='<div class="or-side"><span class="bp">'+(w?'⚡ ':'')+fp(r.p)+'</span><span class="bv">'+fv(r.v,r.p)+'</span></div>';
+      } else {
+        h+='<div class="or-side"><span class="av">'+fv(r.v,r.p)+'</span><span class="apc">'+(w?'⚡ ':'')+fp(r.p)+'</span></div>';
+      }
+      h+='</div>';
+    });
+    return h;
+  }
+  document.getElementById('d-blist').innerHTML=mkRows(fb,'b',mbv);
+  document.getElementById('d-alist').innerHTML=mkRows(fa,'a',mav);
+
+  document.getElementById('d-tcnt').textContent=D.tape.length+' tranzacții';
+  var ft=D.tape.slice(0,100);
+  var htmlArr=[];
+  for(var j=0;j<ft.length;j++){
+    var tr=ft[j];
+    var d=new Date(tr.time);
+    var tStr=[d.getHours(),d.getMinutes(),d.getSeconds()].map(function(x){return('0'+x).slice(-2);}).join(':');
+    var q=C.tapeQu==='usdt'?tr.v*(D.price||pm().p):tr.v,big=q>=C.bigTrade,buy=tr.type==='BUY';
+    htmlArr.push('<div class="or g4 '+(buy?'tb-buy':'tb-sell')+(big?' tb-big':'')+'"><span class="tt">'+tStr+'</span><span class="tp '+(buy?'buy-c':'sell-c')+'">'+fp(tr.price)+'</span><span class="tv3">'+fv(tr.v, tr.price)+'</span><span class="tty '+(buy?'buy-c':'sell-c')+'">'+tr.type+'</span></div>');
+  }
+  document.getElementById('d-tlist').innerHTML=htmlArr.join('');
+}
+
+/* ════════════════════════════════════
+   CONSTRUCTOR
+════════════════════════════════════ */
+var consGen = {}; 
+
 function connectAllCons(){consSel.forEach(function(id){connectConsEx(id);});}
 function connectConsEx(exId){
   var ex=ALL_EX.find(function(e){return e.id===exId;});
   if(!ex||!ex.hasWS)return;
-  if(!exBooks[exId])exBooks[exId]={bids:{},asks:{},price:livePrice||pm().p,connected:false};
-  if(consWS[exId]){try{consWS[exId].close();}catch(e){}}
+  
+  if(!exBooks[exId]) exBooks[exId]={bids:{},asks:{},price:pm().p,connected:false};
+  exBooks[exId].tape = loadConsTape(exId, curPair);
+  
+  consGen[exId] = Date.now();
+  var key = consGen[exId];
+  
+  if(consWS[exId]){try{consWS[exId].onclose=null;consWS[exId].close();}catch(e){} delete consWS[exId];}
+  if(consPingInts[exId]) {clearInterval(consPingInts[exId]); delete consPingInts[exId];}
+  
   var pair=curPair,sym;
   try{
     if(exId==='binance'){
       sym=pair.toLowerCase();
-      var ws=new WebSocket('wss://stream.binance.com:9443/ws/'+sym+'@depth@100ms');
-      ws.onopen=function(){exBooks[exId].connected=true;buildChips();
+      var ws=new WebSocket('wss://stream.binance.com:9443/stream?streams='+sym+'@depth@100ms/'+sym+'@trade');
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        exBooks[exId].connected=true;buildChips();
         fetch('https://api.binance.com/api/v3/depth?symbol='+pair+'&limit=200').then(function(r){return r.json();}).then(function(d){
+          if(consGen[exId] !== key) return;
+          exBooks[exId].bids={};exBooks[exId].asks={};
           (d.bids||[]).forEach(function(r){exBooks[exId].bids[r[0]]=+r[1];});
           (d.asks||[]).forEach(function(r){exBooks[exId].asks[r[0]]=+r[1];});
-          calcConsPrice(exId);if(curPage==='cons')renderCons();
+          calcConsPrice(exId);reqRenderCons();
         }).catch(function(){});
       };
       ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
         var d=JSON.parse(e.data);
-        (d.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
-        (d.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
-        calcConsPrice(exId);if(curPage==='cons')renderCons();
+        if(d.stream && d.stream.indexOf('@depth')>-1){
+          (d.data.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
+          (d.data.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
+          calcConsPrice(exId);
+        } else if(d.stream && d.stream.indexOf('@trade')>-1){
+          var t=d.data, prc=+t.p, qty=+t.q, sell=t.m===true;
+          exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+          if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+        }
+        reqRenderCons();
       };
-      ws.onclose=function(){exBooks[exId].connected=false;buildChips();setTimeout(function(){if(consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);};
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return; 
+        exBooks[exId].connected=false;buildChips();
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
       consWS[exId]=ws;
-    } else if(exId==='bybit'){
+    } 
+    else if(exId==='binance_fut'){
+      sym=pair.toLowerCase();
+      var ws=new WebSocket('wss://fstream.binance.com/stream?streams='+sym+'@depth@100ms/'+sym+'@aggTrade');
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        exBooks[exId].connected=true;buildChips();
+        fetch('https://fapi.binance.com/fapi/v1/depth?symbol='+pair+'&limit=200').then(function(r){return r.json();}).then(function(d){
+          if(consGen[exId] !== key) return;
+          exBooks[exId].bids={};exBooks[exId].asks={};
+          (d.bids||[]).forEach(function(r){exBooks[exId].bids[r[0]]=+r[1];});
+          (d.asks||[]).forEach(function(r){exBooks[exId].asks[r[0]]=+r[1];});
+          calcConsPrice(exId);reqRenderCons();
+        }).catch(function(){});
+      };
+      ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
+        var d=JSON.parse(e.data);
+        if(d.stream && d.stream.indexOf('@depth')>-1){
+          (d.data.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
+          (d.data.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
+          calcConsPrice(exId);
+        } else if(d.stream && d.stream.indexOf('@aggTrade')>-1){
+          var t=d.data, prc=+t.p, qty=+t.q, sell=t.m===true;
+          exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+          if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+        }
+        reqRenderCons();
+      };
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return; 
+        exBooks[exId].connected=false;buildChips();
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
+      consWS[exId]=ws;
+    } 
+    else if(exId==='bybit'){
       sym=SYM.bybit(pair);
       var ws=new WebSocket('wss://stream.bybit.com/v5/public/spot');
-      ws.onopen=function(){ws.send(JSON.stringify({op:'subscribe',args:['orderbook.200.'+sym]}));exBooks[exId].connected=true;buildChips();};
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        ws.send(JSON.stringify({op:'subscribe',args:['orderbook.200.'+sym, 'publicTrade.'+sym]}));
+        exBooks[exId].connected=true;buildChips();
+        consPingInts[exId] = setInterval(function(){
+          if(ws.readyState===1 && consGen[exId]===key) ws.send(JSON.stringify({op:'ping'}));
+        }, 20000);
+      };
       ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
         var d=JSON.parse(e.data);if(!d.data)return;var dd=d.data;
         if(d.type==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
-        (dd.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
-        (dd.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
-        calcConsPrice(exId);if(curPage==='cons')renderCons();
+        if(d.topic && d.topic.indexOf('orderbook')>-1){
+          (dd.b||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
+          (dd.a||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
+          calcConsPrice(exId);
+        } else if(d.topic && d.topic.indexOf('publicTrade')>-1){
+          dd.forEach(function(t){
+            var qty=+(t.v||0),prc=+(t.p||0),sell=(t.S==='Sell');
+            exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+            if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+          });
+        }
+        reqRenderCons();
       };
-      ws.onclose=function(){exBooks[exId].connected=false;buildChips();setTimeout(function(){if(consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);};
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return;
+        exBooks[exId].connected=false;buildChips();
+        if(consPingInts[exId]) {clearInterval(consPingInts[exId]); delete consPingInts[exId];}
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
       consWS[exId]=ws;
-    } else if(exId==='okx'){
+    } 
+    else if(exId==='okx'){
       sym=SYM.okx(pair);
       var ws=new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-      ws.onopen=function(){ws.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:sym}]}));exBooks[exId].connected=true;buildChips();};
-      ws.onmessage=function(e){
-        if(e.data==='pong')return;
-        var d=JSON.parse(e.data);if(!d.data||!d.data[0])return;var dd=d.data[0];
-        if(d.action==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
-        (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
-        (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
-        calcConsPrice(exId);if(curPage==='cons')renderCons();
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        ws.send(JSON.stringify({op:'subscribe',args:[{channel:'books',instId:sym},{channel:'trades',instId:sym}]}));
+        exBooks[exId].connected=true;buildChips();
+        consPingInts[exId] = setInterval(function(){
+          if(ws.readyState===1 && consGen[exId]===key) ws.send('ping');
+        }, 25000);
       };
-      ws.onclose=function(){exBooks[exId].connected=false;buildChips();setTimeout(function(){if(consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);};
-      setInterval(function(){if(ws.readyState===1)ws.send('ping');},25000);
+      ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
+        if(e.data==='pong')return;
+        var d=JSON.parse(e.data);
+        if(d.event==='error')return;
+        if(!d.data)return;
+        if(d.arg && d.arg.channel==='books'){
+          var dd=d.data[0];
+          if(d.action==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
+          (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].bids[r[0]];else exBooks[exId].bids[r[0]]=v;});
+          (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete exBooks[exId].asks[r[0]];else exBooks[exId].asks[r[0]]=v;});
+          calcConsPrice(exId);
+        } else if(d.arg && d.arg.channel==='trades'){
+          d.data.forEach(function(t){
+            var qty=+(t.sz||0),prc=+(t.px||0),sell=(t.side==='sell');
+            exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+            if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+          });
+        }
+        reqRenderCons();
+      };
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return;
+        exBooks[exId].connected=false;buildChips();
+        if(consPingInts[exId]) {clearInterval(consPingInts[exId]); delete consPingInts[exId];}
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
       consWS[exId]=ws;
-    } else if(exId==='kraken'){
+    } 
+    else if(exId==='kraken'){
       sym=SYM.kraken(pair);
       var ws=new WebSocket('wss://ws.kraken.com/v2');
-      ws.onopen=function(){ws.send(JSON.stringify({method:'subscribe',params:{channel:'book',symbol:[sym],depth:100}}));exBooks[exId].connected=true;buildChips();};
-      ws.onmessage=function(e){
-        var d=JSON.parse(e.data);if(d.channel!=='book'||!d.data)return;
-        var dd=Array.isArray(d.data)?d.data[0]:d.data;
-        if(d.type==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
-        (dd.bids||[]).forEach(function(r){var v=+r.qty;if(v===0)delete exBooks[exId].bids[r.price];else exBooks[exId].bids[r.price]=v;});
-        (dd.asks||[]).forEach(function(r){var v=+r.qty;if(v===0)delete exBooks[exId].asks[r.price];else exBooks[exId].asks[r.price]=v;});
-        calcConsPrice(exId);if(curPage==='cons')renderCons();
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        ws.send(JSON.stringify({method:'subscribe',params:{channel:'book',symbol:[sym],depth:100}}));
+        ws.send(JSON.stringify({method:'subscribe',params:{channel:'trade',symbol:[sym]}}));
+        exBooks[exId].connected=true;buildChips();
+        consPingInts[exId] = setInterval(function(){
+          if(ws.readyState===1 && consGen[exId]===key) ws.send(JSON.stringify({method:'ping'}));
+        }, 25000);
       };
-      ws.onclose=function(){exBooks[exId].connected=false;buildChips();setTimeout(function(){if(consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);};
-      setInterval(function(){if(ws.readyState===1)ws.send(JSON.stringify({method:'ping'}));},25000);
+      ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
+        var d=JSON.parse(e.data);if(!d.data)return;
+        if(d.channel==='book'){
+          var dd=Array.isArray(d.data)?d.data[0]:d.data;
+          if(d.type==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
+          (dd.bids||[]).forEach(function(r){var v=+r.qty;if(v===0)delete exBooks[exId].bids[r.price];else exBooks[exId].bids[r.price]=v;});
+          (dd.asks||[]).forEach(function(r){var v=+r.qty;if(v===0)delete exBooks[exId].asks[r.price];else exBooks[exId].asks[r.price]=v;});
+          calcConsPrice(exId);
+        } else if(d.channel==='trade'){
+          (Array.isArray(d.data)?d.data:[d.data]).forEach(function(t){
+            var qty=+(t.qty||0),prc=+(t.price||0),sell=(t.side==='sell');
+            exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+            if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+          });
+        }
+        reqRenderCons();
+      };
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return;
+        exBooks[exId].connected=false;buildChips();
+        if(consPingInts[exId]) {clearInterval(consPingInts[exId]); delete consPingInts[exId];}
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
+      consWS[exId]=ws;
+    }
+    else if(exId==='coinbase' || exId==='coinbase_fut') {
+      sym = (exId==='coinbase') ? SYM.coinbase(pair) : SYM.coinbase_fut(pair);
+      var ws=new WebSocket('wss://advanced-trade-ws.coinbase.com');
+      ws.onopen=function(){
+        if(consGen[exId] !== key) {ws.close(); return;}
+        ws.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'level2'}));
+        ws.send(JSON.stringify({type:'subscribe',product_ids:[sym],channel:'market_trades'}));
+        exBooks[exId].connected=true;buildChips();
+      };
+      ws.onmessage=function(e){
+        if(consGen[exId] !== key) return;
+        var d=JSON.parse(e.data);
+        if(d.channel==='l2_data'&&d.events){
+          d.events.forEach(function(ev){
+            if(ev.type==='snapshot'){exBooks[exId].bids={};exBooks[exId].asks={};}
+            (ev.updates||[]).forEach(function(u){
+              var side=(u.side==='bid')?'bid':'ask';
+              var v=+u.new_quantity;
+              if(side==='bid'){if(v===0)delete exBooks[exId].bids[u.price_level];else exBooks[exId].bids[u.price_level]=v;}
+              else{if(v===0)delete exBooks[exId].asks[u.price_level];else exBooks[exId].asks[u.price_level]=v;}
+            });
+          });
+          calcConsPrice(exId);
+        } else if(d.channel==='market_trades'&&d.events){
+          d.events.forEach(function(ev){
+            (ev.trades||[]).forEach(function(t){
+              var qty=+t.size,prc=+t.price,sell=(t.side==='SELL'||t.side==='sell');
+              exBooks[exId].tape.unshift({time:Date.now(),price:prc,v:qty,type:sell?'SELL':'BUY'});
+              if(exBooks[exId].tape.length > 10000) exBooks[exId].tape.pop();
+            });
+          });
+        }
+        reqRenderCons();
+      };
+      ws.onclose=function(){
+        if(consGen[exId] !== key) return;
+        exBooks[exId].connected=false;buildChips();
+        setTimeout(function(){if(consGen[exId]===key && consSel.indexOf(exId)>=0)connectConsEx(exId);},4000);
+      };
       consWS[exId]=ws;
     }
   }catch(ex){}
@@ -1064,7 +1713,7 @@ function calcConsPrice(id){
   if(ba.length&&aa.length)b.price=(ba[0]+aa[0])/2;
 }
 
-/* ════ SIM VOLS (pentru burse fără WS propriu) ════ */
+/* ════ SIM VOLS ════ */
 function initSimVols(){
   ALL_EX.forEach(function(ex){
     var b=[],a=[];
@@ -1085,7 +1734,7 @@ function getConsBook(exId){
     var b=exBooks[exId];
     var bArr=Object.entries(b.bids).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,c){return c.p-a.p;});
     var aArr=Object.entries(b.asks).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,c){return a.p-c.p;});
-    return{bids:bArr,asks:aArr,price:b.price,live:true};
+    return{bids:bArr,asks:aArr,price:b.price,live:true,tape:b.tape||[]};
   }
   var price=livePrice||P.p;
   var offset=price*ex.sp/100;
@@ -1102,7 +1751,7 @@ function getConsBook(exId){
       asks.push({p:parseFloat((price+P.step*(i+1)).toFixed(P.dec)),v:sv.asks[i]||ri(50,900)});
     }
   }
-  return{bids:bids,asks:asks,price:parseFloat((price+offset*(rn(0,1)>.5?1:-1)*.3).toFixed(P.dec)),live:false};
+  return{bids:bids,asks:asks,price:parseFloat((price+offset*(rn(0,1)>.5?1:-1)*.3).toFixed(P.dec)),live:false,tape:[]};
 }
 function groupArr(arr,grp,side){
   if(!grp||grp<=0)return arr;
@@ -1117,9 +1766,50 @@ function groupArr(arr,grp,side){
 }
 
 /* ════════════════════════════════════
+   TAPE FILTERING & STATS
+════════════════════════════════════ */
+function applyTapeRange(){
+  var val = document.getElementById('sel-tape-range').value;
+  C.tapeRange = val;
+  if(val === 'custom'){
+    document.getElementById('date-from').style.display = '';
+    document.getElementById('date-to').style.display = '';
+  } else {
+    document.getElementById('date-from').style.display = 'none';
+    document.getElementById('date-to').style.display = 'none';
+  }
+  renderSing();
+}
+
+function getTapeDateRange(){
+  var now = Date.now();
+  var minTime = 0, maxTime = now;
+  var range = C.tapeRange || 'all';
+  
+  if(range === 'today'){
+    var d = new Date(); d.setHours(0,0,0,0); minTime = d.getTime();
+  } else if(range === 'yesterday'){
+    var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-1);
+    minTime = d.getTime();
+    maxTime = d.getTime() + 86400000;
+  } else if(range === 'custom'){
+    var from = document.getElementById('date-from').value;
+    var to = document.getElementById('date-to').value;
+    if(from) minTime = new Date(from).getTime();
+    if(to) maxTime = new Date(to).getTime() + 86400000; 
+  } else if(!isNaN(parseInt(range))){
+    minTime = now - (parseInt(range) * 86400000);
+  }
+  
+  return {min: minTime, max: maxTime};
+}
+
+/* ════════════════════════════════════
    RENDER SINGULAR
 ════════════════════════════════════ */
 function renderSing(){
+  if (Object.keys(liveBids).length === 0 && Object.keys(liveAsks).length === 0 && liveTape.length === 0) return;
+  
   var grp=C.grp;
   var bArr=Object.entries(liveBids).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,b){return b.p-a.p;});
   var aArr=Object.entries(liveAsks).map(function(e){return{p:+e[0],v:+e[1]};}).sort(function(a,b){return a.p-b.p;});
@@ -1160,8 +1850,12 @@ function renderSing(){
       var q=C.qu==='usdt'?r.v*(livePrice||pm().p):r.v;
       var w=q>=C.whale,pct=C.bars?(r.v/mv*50).toFixed(0):0;
       h+='<div class="or g2'+(w?' wh':'')+'"><div class="vb '+(side==='b'?'vb-b':'vb-a')+'" style="width:'+pct+'%"></div>';
-      h+='<span class="'+(side==='b'?'bp':'apc')+'">'+(w?'⚡ ':'')+fp(r.p)+'</span>';
-      h+='<span class="'+(side==='b'?'bv':'av')+'">'+fv(r.v,r.p)+'</span></div>';
+      if(side==='b'){
+        h+='<div class="or-side"><span class="bp">'+(w?'⚡ ':'')+fp(r.p)+'</span><span class="bv">'+fv(r.v,r.p)+'</span></div>';
+      } else {
+        h+='<div class="or-side"><span class="av">'+fv(r.v,r.p)+'</span><span class="apc">'+(w?'⚡ ':'')+fp(r.p)+'</span></div>';
+      }
+      h+='</div>';
     });
     return h;
   }
@@ -1169,19 +1863,45 @@ function renderSing(){
   var sprRow=C.spr&&bestBid&&bestAsk?'<div class="spr-row">↕ Spread: '+(((bestAsk-bestBid)/bestBid*100).toFixed(3))+'%</div>':'';
   document.getElementById('s-alist').innerHTML=sprRow+mkRows(fa,'a',mav);
 
-  var ft=liveTape.filter(function(r){var q=C.tapeQu==='usdt'?r.v*(livePrice||pm().p):r.v;return q>=C.minTape;}).slice(0,C.tapeCount);
-  document.getElementById('s-tcnt').textContent='≥'+C.minTape+' '+pm().u+(curMkt==='futures'?' | FUT':' | SPOT');
-  var th='';
-  ft.forEach(function(r){
-    var q=C.tapeQu==='usdt'?r.v*(livePrice||pm().p):r.v,big=q>=C.bigTrade,buy=r.type==='BUY';
-    th+='<div class="or g4 '+(buy?'tb-buy':'tb-sell')+(big?' tb-big':'')+'"><span class="tt">'+r.time+'</span><span class="tp '+(buy?'buy-c':'sell-c')+'">'+fp(r.price)+'</span><span class="tv3">'+fvT(r.v)+'</span><span class="tty '+(buy?'buy-c':'sell-c')+'">'+r.type+'</span></div>';
-  });
-  document.getElementById('s-tlist').innerHTML=th;
+  var range = getTapeDateRange();
+  var buyVol = 0, sellVol = 0;
+  var filteredTape = [];
+  
+  for(var i=0; i<liveTape.length; i++){
+    var r = liveTape[i];
+    if(r.time >= range.min && r.time <= range.max){
+      var tapeQtyVal = C.tapeQu === 'usdt' ? r.v * (livePrice||pm().p) : r.v;
+      if (tapeQtyVal >= C.minTape) {
+        filteredTape.push(r);
+        if(r.type === 'BUY') buyVol += r.v;
+        else sellVol += r.v;
+      }
+    }
+  }
+  
+  document.getElementById('ts-buy-vol').textContent = fvT(buyVol);
+  document.getElementById('ts-sell-vol').textContent = fvT(sellVol);
+  var net = buyVol - sellVol;
+  var netEl = document.getElementById('ts-net-vol');
+  netEl.textContent = (net >= 0 ? '+' : '') + fvT(Math.abs(net));
+  netEl.style.color = net >= 0 ? 'var(--col-bid)' : 'var(--col-ask)';
+  
+  document.getElementById('s-tcnt').textContent=filteredTape.length+' tranzacții';
+
+  var ft = filteredTape.slice(0, 1000); 
+  var htmlArr = [];
+  for (var j = 0; j < ft.length; j++) {
+    var tr = ft[j];
+    var d = new Date(tr.time);
+    var tStr = [d.getHours(),d.getMinutes(),d.getSeconds()].map(function(x){return('0'+x).slice(-2)}).join(':');
+    var q=C.tapeQu==='usdt'?tr.v*(livePrice||pm().p):tr.v,big=q>=C.bigTrade,buy=tr.type==='BUY';
+    htmlArr.push('<div class="or g4 '+(buy?'tb-buy':'tb-sell')+(big?' tb-big':'')+'"><span class="tt">'+tStr+'</span><span class="tp '+(buy?'buy-c':'sell-c')+'">'+fp(tr.price)+'</span><span class="tv3">'+fvT(tr.v)+'</span><span class="tty '+(buy?'buy-c':'sell-c')+'">'+tr.type+'</span></div>');
+  }
+  document.getElementById('s-tlist').innerHTML = htmlArr.join('');
 }
 
 /* ════════════════════════════════════
-   RENDER CONSTRUCTOR — folosește EXACT aceleași filtre
-   (C.minOrder, C.whale, C.grp, C.qu, C.rows) ca Regim Singular
+   RENDER CONSTRUCTOR
 ════════════════════════════════════ */
 function buildChips(){
   var h='';
@@ -1195,20 +1915,50 @@ function buildChips(){
 }
 function toggleEx(id){
   var i=consSel.indexOf(id);
-  if(i>=0){if(consSel.length<=1)return;consSel.splice(i,1);if(consWS[id]){try{consWS[id].close();}catch(e){} delete consWS[id];}if(exBooks[id])exBooks[id].connected=false;}
-  else{if(consSel.length>=4)return;consSel.push(id);connectConsEx(id);}
+  if(i>=0){
+    if(consSel.length<=1)return;
+    consSel.splice(i,1);
+    consGen[id] = Date.now();
+    if(consWS[id]){try{consWS[id].onclose=null;consWS[id].close();}catch(e){} delete consWS[id];}
+    if(consPingInts[id]){clearInterval(consPingInts[id]); delete consPingInts[id];}
+    if(exBooks[id]){exBooks[id].connected=false;}
+  }
+  else{
+    if(consSel.length>=4)return;
+    consSel.push(id);connectConsEx(id);
+  }
   buildChips();renderCons();
 }
+
+function updConsFilter(exId, type, val) {
+  if(!C.consFilters[exId]) C.consFilters[exId] = {};
+  C.consFilters[exId][type] = (type === 'tapeType') ? val : (parseFloat(val) || 0);
+  saveConsSettings();
+  renderCons();
+}
+
 function renderCons(){
   var rows=C.rows,grp=C.grp;
   var h='',totB=0,totA=0,wc=0;
+
   consSel.forEach(function(exId){
     var ex=ALL_EX.find(function(e){return e.id===exId;});if(!ex)return;
     var bk=getConsBook(exId);
     var fb=bk.bids,fa=bk.asks;
     if(grp>0){fb=groupArr(fb,grp,'bid');fa=groupArr(fa,grp,'ask');}
-    fb=fb.filter(function(r){return (C.qu==='usdt'?r.v*(bk.price||livePrice||pm().p):r.v)>=C.minOrder;}).slice(0,rows);
-    fa=fa.filter(function(r){return (C.qu==='usdt'?r.v*(bk.price||livePrice||pm().p):r.v)>=C.minOrder;}).slice(0,rows);
+    
+    var exFilters = C.consFilters[exId] || {};
+    var minBid = exFilters.minBid || 0;
+    var whBid = exFilters.whBid || 0;
+    var minAsk = exFilters.minAsk || 0;
+    var whAsk = exFilters.whAsk || 0;
+    var minTapeBuy = exFilters.minTapeBuy || 0;
+    var minTapeSell = exFilters.minTapeSell || 0;
+    var exTapeType = exFilters.tapeType || 'all';
+    
+    fb=fb.filter(function(r){return (C.qu==='usdt'?r.v*(bk.price||livePrice||pm().p):r.v)>=minBid;}).slice(0,rows);
+    fa=fa.filter(function(r){return (C.qu==='usdt'?r.v*(bk.price||livePrice||pm().p):r.v)>=minAsk;}).slice(0,rows);
+    
     var mbv=fb.length?Math.max.apply(null,fb.map(function(r){return r.v;})):1;
     var mav=fa.length?Math.max.apply(null,fa.map(function(r){return r.v;})):1;
     var tbV=fb.reduce(function(s,r){return s+r.v;},0),tbU=fb.reduce(function(s,r){return s+r.v*r.p;},0);
@@ -1217,33 +1967,63 @@ function renderCons(){
     var bpct=Math.round(tbV/(tbV+taV||1)*100);
     var badge=bk.live?'<span class="badge b-live">LIVE</span>':'<span class="badge b-sim">est.</span>';
     var qu=unit();
-    function mkEx(arr,side,mv){
-      var h2='';
-      arr.forEach(function(r){
-        var q=C.qu==='usdt'?r.v*(bk.price||pm().p):r.v;
-        var w=q>=C.whale,pct=C.bars?(r.v/mv*50).toFixed(0):0;
-        if(w)wc++;
-        h2+='<div class="er'+(w?' er-wh':'')+'"><div class="vb '+(side==='b'?'vb-b':'vb-a')+'" style="width:'+pct+'%"></div>';
-        h2+='<span class="er-'+(side==='b'?'bp':'ap')+'">'+(w?'⚡':'')+fp(r.p)+'</span><span class="er-'+(side==='b'?'bv':'av')+'">'+fv(r.v,r.p)+'</span></div>';
-      });
-      return h2;
-    }
     h+='<div class="ex-card">';
     h+='<div class="ex-hdr"><span class="ex-n" style="color:'+ex.c+'">'+ex.n+badge+'</span><span class="ex-price">'+fp(bk.price)+'</span></div>';
-    h+='<div class="ex-col"><span class="ech">BID</span><span class="ech">'+qu+'</span><span class="ech">'+qu+'</span><span class="ech">ASK</span></div>';
-    h+='<div class="ex-tot"><span class="etv">'+Math.round(tbU).toLocaleString()+'$</span><span class="etv">'+fv(tbV)+'</span><span class="etv">'+fv(taV)+'</span><span class="etv">'+Math.round(taU).toLocaleString()+'$</span></div>';
+    
+    h+='<div class="ex-filters">';
+    h+='<span style="color:var(--col-bid)">Min B:</span><input type="number" class="ex-inp" value="'+minBid+'" onchange="updConsFilter(\''+exId+'\', \'minBid\', this.value)" step="any" title="Min BID">';
+    h+='<span style="color:var(--col-bid)">Wh B:</span><input type="number" class="ex-inp" value="'+whBid+'" onchange="updConsFilter(\''+exId+'\', \'whBid\', this.value)" step="any" title="Whale BID">';
+    h+='<span style="color:var(--col-ask)">Min A:</span><input type="number" class="ex-inp" value="'+minAsk+'" onchange="updConsFilter(\''+exId+'\', \'minAsk\', this.value)" step="any" title="Min ASK">';
+    h+='<span style="color:var(--col-ask)">Wh A:</span><input type="number" class="ex-inp" value="'+whAsk+'" onchange="updConsFilter(\''+exId+'\', \'whAsk\', this.value)" step="any" title="Whale ASK">';
+    h+='</div>';
+    h+='<div class="ex-filters" style="border-top:none; padding-top:0">';
+    h+='<span>Tr Buy≥:</span><input type="number" class="ex-inp" value="'+minTapeBuy+'" oninput="updConsFilter(\''+exId+'\', \'minTapeBuy\', this.value)" step="any" title="Min Buy Vol">';
+    h+='<span>Tr Sell≥:</span><input type="number" class="ex-inp" value="'+minTapeSell+'" oninput="updConsFilter(\''+exId+'\', \'minTapeSell\', this.value)" step="any" title="Min Sell Vol">';
+    h+='<span>Tip:</span><select class="ex-inp" onchange="updConsFilter(\''+exId+'\', \'tapeType\', this.value)"><option value="all"'+(exTapeType==='all'?' selected':'')+'>All</option><option value="BUY"'+(exTapeType==='BUY'?' selected':'')+'>Buy</option><option value="SELL"'+(exTapeType==='SELL'?' selected':'')+'>Sell</option></select>';
+    h+='</div>';
+    
+    h+='<div class="ex-col"><span class="ech-l">BID ('+qu+')</span><span class="ech-r">ASK ('+qu+')</span></div>';
+    h+='<div class="ex-tot"><span class="etv-l">'+Math.round(tbU).toLocaleString()+'$ / '+fv(tbV)+'</span><span class="etv-r">'+fv(taV)+' / '+Math.round(taU).toLocaleString()+'$</span></div>';
     h+='<div class="ex-rows">';
     for(var i=0;i<Math.min(Math.max(fb.length,fa.length),rows);i++){
       var bid=fb[i],ask=fa[i];
-      var bw=bid&&(C.qu==='usdt'?bid.v*(bk.price||pm().p):bid.v)>=C.whale;
-      var aw=ask&&(C.qu==='usdt'?ask.v*(bk.price||pm().p):ask.v)>=C.whale;
+      var bw=bid&&(C.qu==='usdt'?bid.v*(bk.price||pm().p):bid.v)>=whBid;
+      var aw=ask&&(C.qu==='usdt'?ask.v*(bk.price||pm().p):ask.v)>=whAsk;
       if(bw)wc++;if(aw)wc++;
-      h+='<div class="er'+(bw||aw?' er-wh':'')+'"><div class="vb vb-b" style="width:'+((bid?bid.v/mbv*40:0).toFixed(0))+'%"></div>';
-      h+=bid?'<span class="er-bp">'+fp(bid.p)+'</span><span class="er-bv">'+fv(bid.v,bid.p)+'</span>':'<span class="er-bp">—</span><span class="er-bv">—</span>';
-      h+=ask?'<span class="er-av">'+fv(ask.v,ask.p)+'</span><span class="er-ap">'+fp(ask.p)+'</span>':'<span class="er-av">—</span><span class="er-ap">—</span>';
+      h+='<div class="er"><div class="vb vb-b" style="width:'+((bid?bid.v/mbv*40:0).toFixed(0))+'%"></div>';
+      h+='<div class="er-bid-side '+(bw?'wh-c':'')+'"><span class="er-bp">'+(bid?(bw?'⚡ ':'')+fp(bid.p):'—')+'</span><span class="er-bv">'+(bid?fv(bid.v,bid.p):'—')+'</span></div>';
+      h+='<div class="er-ask-side '+(aw?'wh-c':'')+'"><span class="er-av">'+(ask?fv(ask.v,ask.p):'—')+'</span><span class="er-ap">'+(ask?(aw?'⚡ ':'')+fp(ask.p):'—')+'</span></div>';
       h+='<div class="vb vb-a" style="width:'+((ask?ask.v/mav*40:0).toFixed(0))+'%"></div></div>';
     }
-    h+='</div><div class="prow"><div class="pbar"><div class="pb-b" style="width:'+bpct+'%"></div><div class="pb-a" style="width:'+(100-bpct)+'%"></div></div>';
+    h+='</div>';
+    
+    h+='<div class="ex-tape-box">';
+    h+='<div class="ex-tape-hdr"><span>Ora</span><span>Preț</span><span>Vol</span><span>Tip</span></div>';
+    h+='<div class="ex-tape-list">';
+    var tapeHtml='';
+    var rendered=0;
+    for(var t=0; t<bk.tape.length; t++){
+      if(rendered>=30) break;
+      var tr=bk.tape[t];
+      if(exTapeType!=='all' && tr.type!==exTapeType) continue;
+      
+      var trVol = C.qu==='usdt' ? tr.v*tr.price : tr.v;
+      if(tr.type==='BUY' && trVol < minTapeBuy) continue;
+      if(tr.type==='SELL' && trVol < minTapeSell) continue;
+      
+      var d=new Date(tr.time);
+      var tStr=[d.getHours(),d.getMinutes(),d.getSeconds()].map(function(x){return('0'+x).slice(-2)}).join(':');
+      var buy=tr.type==='BUY';
+      var isBig = C.tapeQu==='usdt' ? (tr.v*tr.price)>=C.bigTrade : tr.v>=C.bigTrade;
+      tapeHtml+='<div class="ex-tape-row '+(buy?'tb-buy':'tb-sell')+(isBig?' tb-big':'')+'">';
+      tapeHtml+='<span>'+tStr+'</span><span class="'+(buy?'buy-c':'sell-c')+'">'+fp(tr.price)+'</span><span>'+fvT(tr.v)+'</span><span class="'+(buy?'buy-c':'sell-c')+'">'+tr.type+'</span>';
+      tapeHtml+='</div>';
+      rendered++;
+    }
+    h+=tapeHtml;
+    h+='</div></div>';
+    
+    h+='<div class="prow"><div class="pbar"><div class="pb-b" style="width:'+bpct+'%"></div><div class="pb-a" style="width:'+(100-bpct)+'%"></div></div>';
     h+='<div class="pnums"><span style="color:var(--col-bid)">BID '+bpct+'%</span><span style="color:var(--col-ask)">'+(100-bpct)+'% ASK</span></div></div></div>';
   });
   document.getElementById('cons-body').innerHTML=h;
@@ -1335,8 +2115,8 @@ function loadSnap(id){
   document.querySelectorAll('.srow').forEach(function(el){el.classList.remove('on');});
   var row=document.getElementById('sr-'+id);if(row)row.classList.add('on');
   var bh='',ah='';
-  (s.bids||[]).forEach(function(r){var w=r.v>=C.whale;bh+='<div class="or g2'+(w?' wh':'')+'"><span class="bp">'+fp(r.p)+'</span><span class="bv">'+fv(r.v,r.p)+'</span></div>';});
-  (s.asks||[]).forEach(function(r){var w=r.v>=C.whale;ah+='<div class="or g2'+(w?' wh':'')+'"><span class="apc">'+fp(r.p)+'</span><span class="av">'+fv(r.v,r.p)+'</span></div>';});
+  (s.bids||[]).forEach(function(r){var w=r.v>=C.whale;bh+='<div class="or g2'+(w?' wh':'')+'"><div class="or-side"><span class="bp">'+fp(r.p)+'</span><span class="bv">'+fv(r.v,r.p)+'</span></div></div>';});
+  (s.asks||[]).forEach(function(r){var w=r.v>=C.whale;ah+='<div class="or g2'+(w?' wh':'')+'"><div class="or-side"><span class="av">'+fv(r.v,r.p)+'</span><span class="apc">'+fp(r.p)+'</span></div></div>';});
   document.getElementById('sdet').innerHTML=
     '<div class="sdet-hdr"><span style="font-family:var(--ui);font-size:13px;font-weight:700;color:#fff">'+s.pair.replace('USDT','/USDT')+(s.mkt==='futures'?' PERP':'')+' — '+s.ex.toUpperCase()+'</span><span style="font-size:10px;color:var(--tx3)">'+s.time+' @ '+s.price+'</span></div>'
     +'<div class="sbook"><div class="sside"><div class="colhdr g2"><span class="ch">BID</span><span class="ch">'+unit()+'</span></div><div class="sa">'+bh+'</div></div>'
@@ -1350,7 +2130,12 @@ function openMdl(){
   document.getElementById('m-grp').value=C.grp;document.getElementById('m-qu').value=C.qu;
   document.getElementById('m-bars').checked=C.bars;document.getElementById('m-spr').checked=C.spr;document.getElementById('m-imb').checked=C.imb;
   document.getElementById('m-fs').value=C.fs;
-  document.getElementById('m-cbid').value=C.colBid;document.getElementById('m-cask').value=C.colAsk;document.getElementById('m-cwh').value=C.colWh;
+  document.getElementById('m-fswh').value=C.fsWh;
+  document.getElementById('m-cbid').value=C.colBid;
+  document.getElementById('m-cask').value=C.colAsk;
+  document.getElementById('m-cwh').value=C.colWh;
+  document.getElementById('m-cvol').value=C.colVol;
+  document.getElementById('m-cwhbg').value=C.colWhBg;
   document.getElementById('m-mt').value=C.minTape;document.getElementById('m-bt').value=C.bigTrade;
   document.getElementById('m-tc').value=C.tapeCount;document.getElementById('m-tqu').value=C.tapeQu;
   document.getElementById('m-atoast').checked=C.alertToast;document.getElementById('m-athr').value=C.alertThr;document.getElementById('m-acd').value=C.alertCd;
@@ -1385,10 +2170,15 @@ function saveSettings(){
   C.qu=document.getElementById('m-qu').value;
   C.bars=document.getElementById('m-bars').checked;C.spr=document.getElementById('m-spr').checked;C.imb=document.getElementById('m-imb').checked;
   C.fs=document.getElementById('m-fs').value;
-  C.colBid=document.getElementById('m-cbid').value;C.colAsk=document.getElementById('m-cask').value;C.colWh=document.getElementById('m-cwh').value;
+  C.fsWh=document.getElementById('m-fswh').value;
+  C.colBid=document.getElementById('m-cbid').value;
+  C.colAsk=document.getElementById('m-cask').value;
+  C.colWh=document.getElementById('m-cwh').value;
+  C.colVol=document.getElementById('m-cvol').value;
+  C.colWhBg=document.getElementById('m-cwhbg').value;
   C.minTape=parseFloat(document.getElementById('m-mt').value)||0;
   C.bigTrade=parseFloat(document.getElementById('m-bt').value)||500;
-  C.tapeCount=parseInt(document.getElementById('m-tc').value)||50;
+  C.tapeCount=parseInt(document.getElementById('m-tc').value)||1000;
   C.tapeQu=document.getElementById('m-tqu').value;
   C.alertToast=document.getElementById('m-atoast').checked;
   C.alertThr=parseFloat(document.getElementById('m-athr').value)||5000;
@@ -1396,6 +2186,7 @@ function saveSettings(){
   C.autoSnap=document.getElementById('m-autosnap').checked;
   C.snapInt=parseInt(document.getElementById('m-si').value)||60;
   C.snapMax=parseInt(document.getElementById('m-sm').value)||100;
+  
   applyStyles();
   document.getElementById('inp-min').value=C.minOrder;document.getElementById('inp-wh').value=C.whale;
   document.getElementById('sel-rows').value=C.rows;document.getElementById('sel-grp').value=C.grp;
@@ -1410,10 +2201,15 @@ function saveSettings(){
 function applyStyles(){
   var r=document.documentElement.style;
   r.setProperty('--fs',C.fs);
-  r.setProperty('--col-bid',C.colBid);r.setProperty('--col-ask',C.colAsk);r.setProperty('--col-wh',C.colWh);
+  r.setProperty('--fs-wh',C.fsWh);
+  r.setProperty('--col-bid',C.colBid);
+  r.setProperty('--col-ask',C.colAsk);
+  r.setProperty('--col-wh',C.colWh);
+  r.setProperty('--col-vol',C.colVol);
+  r.setProperty('--col-wh-bg',C.colWhBg);
 }
 
-/* ════ FILTERS — inputurile rapide din bara de sus ════ */
+/* ════ FILTERS ════ */
 function applyF(){
   C.minOrder=parseFloat(document.getElementById('inp-min').value)||0;
   C.whale=parseFloat(document.getElementById('inp-wh').value)||1000;
@@ -1431,13 +2227,29 @@ function setQU(u,silent){
   savePairSettings();
   if(!silent){if(curPage==='sing')renderSing();if(curPage==='cons')renderCons();}
 }
-function chEx(){curEx=document.getElementById('sel-ex').value;updTV();if(curPage==='sing')connectSing(curPair);}
+function chEx(){
+  curEx=document.getElementById('sel-ex').value;
+  updTV();
+  if(curPage==='sing'){
+    connectSing(curPair);
+    if(singDual) { connectDual(curEx, curMkt === 'spot' ? 'futures' : 'spot', curPair); updateDualBtn(); }
+  }
+}
 function chPair(){
   curPair=document.getElementById('sel-pair').value;
-  loadPairSettings(curPair);           /* ← ÎNCARCĂ setările salvate pentru noua monedă */
-  livePrice=pm().p;liveBids={};liveAsks={};liveTape=[];
+  loadPairSettings(curPair);
+  livePrice=pm().p;liveBids={};liveAsks={};
   initSimVols();updTV();connectSing(curPair);
-  if(curPage==='cons'){Object.keys(exBooks).forEach(function(id){exBooks[id]={bids:{},asks:{},price:pm().p,connected:false};});connectAllCons();renderCons();}
+  if(singDual) { connectDual(curEx, curMkt === 'spot' ? 'futures' : 'spot', curPair); }
+  if(curPage==='cons'){
+    Object.keys(exBooks).forEach(function(id){
+      consGen[id] = Date.now();
+      if(consWS[id]){try{consWS[id].onclose=null;consWS[id].close();}catch(e){}}
+      if(consPingInts[id]){clearInterval(consPingInts[id]); delete consPingInts[id];}
+      exBooks[id]={bids:{},asks:{},price:pm().p,connected:false,tape: loadConsTape(id, curPair)};
+    });
+    connectAllCons();renderCons();
+  }
 }
 
 /* ════ WHALE ALERT ════ */
@@ -1458,12 +2270,32 @@ function restartSnapTimer(){
   if(C.autoSnap)snapTimer=setInterval(function(){takeSnap();},C.snapInt*60000);
 }
 
-/* ════ TICK ════ */
+/* ════ TICK & THROTTLE RANDARE ════ */
+var needsRenderSing = false, needsRenderCons = false;
+
+function reqRenderSing(){ if(curPage==='sing') needsRenderSing = true; }
+function reqRenderCons(){ if(curPage==='cons') needsRenderCons = true; }
+
 setInterval(function(){
   tickSimVols();
-  if(curPage==='cons')renderCons();
-  if(curPage==='sing'&&Object.keys(liveBids).length>0)renderSing();
-},1500);
+  if(curPage==='cons'){
+    var active = document.activeElement;
+    var isEditing = active && (active.tagName === 'INPUT' || active.tagName === 'SELECT') && active.closest('#cons-body');
+    if(!isEditing){
+      renderCons();
+    }
+  }
+  if(curPage==='sing'){
+    if(needsRenderSing && (Object.keys(liveBids).length > 0 || liveTape.length > 0)){
+      renderSing();
+      needsRenderSing = false;
+    }
+    if(singDual && needsRenderDual){
+      renderDual();
+      needsRenderDual = false;
+    }
+  }
+}, 300);
 
 /* ════ INIT ════ */
 loadPairSettings('ETHUSDT');
@@ -1472,6 +2304,11 @@ buildChips();
 updTV();
 connectSing('ETHUSDT');
 goPage('sing');
+
+window.addEventListener('resize', function(){
+  if(curPage === 'stat') renderStat();
+  if(curPage === 'sing') renderSing();
+});
 </script>
 </div>
 </body>
