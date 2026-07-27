@@ -95,6 +95,9 @@ input.ni{cursor:text;width:76px}
 .tape-filter-bar{display:flex;gap:4px;padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--brd2);flex-shrink:0;flex-wrap:wrap;align-items:center}
 .tape-filter-bar select, .tape-filter-bar input{height:24px;font-size:10px;padding:2px 5px}
 .tape-filter-bar input[type="date"]{width:130px}
+.tape-filter-bar span{font-size:8px;color:var(--tx3);font-family:var(--ui);font-weight:700;text-transform:uppercase}
+.ex-inp-sm{width:45px;background:var(--bg3);border:1px solid var(--brd);color:var(--tx);border-radius:3px;padding:2px 4px;font-size:9px;font-family:var(--mono);outline:none;height:24px}
+.ex-inp-sm:focus{border-color:var(--ac)}
 
 .or{display:grid;padding:3px 10px;position:relative;border-bottom:1px solid #0d0f16;cursor:default;align-items:center}
 .or:hover{background:rgba(255,255,255,.02)}
@@ -396,7 +399,19 @@ canvas{display:block}
         </select>
         <input type="date" id="date-from" style="display:none">
         <input type="date" id="date-to" style="display:none">
-        <button class="ibtn" style="height:24px;font-size:10px;padding:0 8px;" onclick="clearTapeHistory()">🗑 Clear</button>
+        
+        <span style="color:var(--col-bid)">Buy≥:</span>
+        <input type="number" id="inp-tape-buy" class="ex-inp-sm" value="0" oninput="renderSing()" step="any" title="Min Buy Vol">
+        <span style="color:var(--col-ask)">Sell≥:</span>
+        <input type="number" id="inp-tape-sell" class="ex-inp-sm" value="0" oninput="renderSing()" step="any" title="Min Sell Vol">
+        <span>Tip:</span>
+        <select id="sel-tape-type" class="ex-inp-sm" style="width:60px;" onchange="renderSing()">
+          <option value="all">All</option>
+          <option value="BUY">Buy</option>
+          <option value="SELL">Sell</option>
+        </select>
+        
+        <button class="ibtn" style="height:24px;font-size:10px;padding:0 8px;margin-left:auto;" onclick="clearTapeHistory()">🗑 Clear</button>
       </div>
       
       <div class="colhdr g4"><span class="ch">Ora</span><span class="ch">Preț</span><span class="ch">Vol</span><span class="ch">Tip</span></div>
@@ -1825,11 +1840,19 @@ function renderSing(){
   var buyVol = 0, sellVol = 0;
   var filteredTape = [];
   
+  var tapeType = document.getElementById('sel-tape-type').value;
+  var minTapeBuy = parseFloat(document.getElementById('inp-tape-buy').value) || 0;
+  var minTapeSell = parseFloat(document.getElementById('inp-tape-sell').value) || 0;
+  
   for(var i=0; i<liveTape.length; i++){
     var r = liveTape[i];
     if(r.time >= range.min && r.time <= range.max){
       var tapeQtyVal = C.tapeQu === 'usdt' ? r.v * (livePrice||pm().p) : r.v;
       if (tapeQtyVal >= C.minTape) {
+        if(tapeType !== 'all' && r.type !== tapeType) continue;
+        if(r.type === 'BUY' && tapeQtyVal < minTapeBuy) continue;
+        if(r.type === 'SELL' && tapeQtyVal < minTapeSell) continue;
+        
         filteredTape.push(r);
         if(r.type === 'BUY') buyVol += r.v;
         else sellVol += r.v;
