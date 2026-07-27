@@ -336,7 +336,7 @@ canvas{display:block}
 </div>
 
 <div class="page on" id="page-sing">
-  <div class="tvw"><iframe id="tvf" src="" frameborder="0"></iframe></div>
+  <div class="tvw" id="tvw"><iframe id="tvf" src="" frameborder="0"></iframe></div>
   
   <div id="dual-panel">
     <div class="brow">
@@ -1164,14 +1164,17 @@ function updateDualBtn() {
 
 function toggleDual() {
   singDual = !singDual;
+  var tvwEl = document.getElementById('tvw');
+  var dualEl = document.getElementById('dual-panel');
+  
   if(singDual){
-    document.getElementById('tvw').style.display='none';
-    document.getElementById('dual-panel').style.display='flex';
+    if(tvwEl) tvwEl.style.display='none';
+    if(dualEl) dualEl.style.display='flex';
     connectDual(curEx, curMkt === 'spot' ? 'futures' : 'spot', curPair);
     renderDual();
   } else {
-    document.getElementById('tvw').style.display='block';
-    document.getElementById('dual-panel').style.display='none';
+    if(tvwEl) tvwEl.style.display='block';
+    if(dualEl) dualEl.style.display='none';
     closeDual();
   }
   updateDualBtn();
