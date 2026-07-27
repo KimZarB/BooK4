@@ -104,7 +104,7 @@ input.ni{cursor:text;width:76px}
 .tape-filter-bar select, .tape-filter-bar input{height:24px;font-size:10px;padding:2px 5px}
 .tape-filter-bar input[type="date"]{width:130px}
 
-/* ORDER ROWS (SINGULAR & ISTORII) */
+/* ORDER ROWS */
 .or{display:grid;padding:3px 10px;position:relative;border-bottom:1px solid #0d0f16;cursor:default;align-items:center}
 .or:hover{background:rgba(255,255,255,.02)}
 .vb{position:absolute;top:0;bottom:0;pointer-events:none}
@@ -808,8 +808,10 @@ function updTV(){
   var pair=curPair;
   var tf=document.getElementById('sel-tf').value;
   var sym=ex+':'+pair;
-  // Folosim endpoint-ul oficial advanced-chart pentru a evita blocarea X-Frame-Options
-  document.getElementById('tvf').src='https://s.tradingview.com/advanced-chart/?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&theme=dark&style=1&locale=ro&allow_symbol_change=true&hide_side_toolbar=false';
+  document.getElementById('tvf').src=
+    'https://s.tradingview.com/widgetembed/?symbol='+encodeURIComponent(sym)
+    +'&interval='+tf+'&theme=dark&style=1&locale=ro&toolbarbg=0f1219'
+    +'&hide_side_toolbar=0&allow_symbol_change=1';
 }
 
 function setMkt(m){
@@ -1099,7 +1101,7 @@ function connectOkxSing(pair,key){
       if(!d.data||!d.data[0])return;var dd=d.data[0];
       if(d.action==='snapshot'){liveBids={};liveAsks={};}
       (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveBids[r[0]];else liveBids[r[0]]=v;});
-      (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveAsks[r[0]];else liveAsks[r[0]]=v;});
+      (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete liveAsks[r[0];}else liveAsks[r[0]]=v;});
       calcMid();reqRenderSing();
     };
     singWsBook.onclose=function(){if(singKey===key){setLive(false,'Reconectare…');setTimeout(function(){if(singKey===key)connectOkxSing(pair,key);},3000);}};
@@ -1323,7 +1325,7 @@ function connectDualOkx(mkt, pair) {
     if(d.arg && d.arg.channel==='books'){
       var dd = d.data[0];
       (dd.bids||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.bids[r[0]];else D.bids[r[0]]=v;});
-      (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.asks[r[0]];else D.asks[r[0]]=v;});
+      (dd.asks||[]).forEach(function(r){var v=+r[1];if(v===0)delete D.asks[r[0];}else D.asks[r[0]]=v;});
     } else if(d.arg && d.arg.channel==='trades'){
       d.data.forEach(function(t){
         var qty=+t.sz, prc=+t.px, sell=t.side==='sell';
@@ -2033,7 +2035,7 @@ function renderCons(){
     '<div class="si"><span class="slbl">Pereche</span><span class="sval" style="color:var(--ac)">'+curPair.replace('USDT','/USDT')+'</span></div>'+
     '<div class="si"><span class="slbl">Total BID</span><span class="sval" style="color:var(--col-bid)">'+fv(totB)+'</span></div>'+
     '<div class="si"><span class="slbl">Total ASK</span><span class="sval" style="color:var(--col-ask)">'+fv(totA)+'</span></div>'+
-    '<div class="si"><span class="slbl">BID %</span><span class="sval" style="color:var(--col-bid)">'+gpct+'%</span></div>'+
+    '<div class="si"><span class="slbl">BID %</span><span class="sval" style="color:var(--col-bid)>'+gpct+'%</span></div>'+
     '<div class="si"><span class="slbl">ASK %</span><span class="sval" style="color:var(--col-ask)">'+(100-gpct)+'%</span></div>'+
     '<div class="si"><span class="slbl">Balene ⚡</span><span class="sval" style="color:var(--yl)">'+wc+'</span></div>';
 }
