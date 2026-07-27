@@ -808,7 +808,8 @@ function updTV(){
   var pair=curPair;
   var tf=document.getElementById('sel-tf').value;
   var sym=ex+':'+pair;
-  document.getElementById('tvf').src='https://s.tradingview.com/chart/?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&theme=dark&style=1&locale=ro';
+  // Folosim endpoint-ul oficial advanced-chart pentru a evita blocarea X-Frame-Options
+  document.getElementById('tvf').src='https://s.tradingview.com/advanced-chart/?symbol='+encodeURIComponent(sym)+'&interval='+tf+'&theme=dark&style=1&locale=ro&allow_symbol_change=true&hide_side_toolbar=false';
 }
 
 function setMkt(m){
